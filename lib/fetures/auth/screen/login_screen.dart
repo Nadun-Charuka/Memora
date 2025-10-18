@@ -25,6 +25,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
+    // Just call the signIn method. The listener will handle the result.
     await ref
         .read(authControllerProvider.notifier)
         .signIn(
@@ -32,36 +33,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           password: _passwordController.text,
         );
 
-    final authState = ref.read(authControllerProvider);
-
-    if (mounted) {
-      authState.when(
-        data: (_) {
-          // Success - AuthWrapper will handle navigation
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Welcome back! 💞'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        },
-        loading: () {},
-        error: (error, _) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Login failed: ${error.toString()}'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        },
-      );
-    }
+    // ❌ REMOVE ALL THE CODE THAT WAS HERE
   }
 
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
     final isLoading = authState.isLoading;
+    ref.listen<AsyncValue<void>>(
+      authControllerProvider,
+      (previous, next) {
+        // Check if the new state has an error
+        if (next.hasError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Login failed: ${next.error.toString()}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        // You can also show a success snackbar here if you want,
+        // though it might disappear quickly on navigation.
+      },
+    );
 
     return Scaffold(
       body: Container(

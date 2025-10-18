@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:memora/fetures/memo/screens/add_memo_screen.dart';
-import 'package:memora/fetures/tree/model/love_tree.dart';
-import 'package:memora/fetures/tree/providers/tree_provider.dart';
-import 'package:memora/fetures/tree/widget/tree_widget.dart';
+import 'package:memora/fetures/auth/provider/auth_provider.dart';
+import '../model/love_tree.dart';
+import '../providers/tree_provider.dart';
+import '../widget/tree_widget.dart';
+import '../../memo/screens/add_memo_screen.dart';
+import '../../memo/screens/memo_list_screen.dart';
 
 class VillageScreen extends ConsumerWidget {
   final String coupleId;
@@ -28,11 +30,36 @@ class VillageScreen extends ConsumerWidget {
         error: (err, stack) => Center(child: Text('Error: $err')),
       ),
       floatingActionButton: currentTreeAsync.value != null
-          ? FloatingActionButton(
-              onPressed: () =>
-                  _showAddMemoSheet(context, ref, currentTreeAsync.value!),
-              backgroundColor: Colors.pink,
-              child: const Icon(Icons.add),
+          ? Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // View Memories Button
+                FloatingActionButton(
+                  heroTag: 'view_memos',
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => MemoListScreen(
+                          treeId: currentTreeAsync.value!.id,
+                          treeName: currentTreeAsync.value!.name,
+                        ),
+                      ),
+                    );
+                  },
+                  backgroundColor: Colors.purple,
+                  child: const Icon(Icons.list),
+                ),
+                const SizedBox(height: 12),
+                // Add Memo Button
+                FloatingActionButton(
+                  heroTag: 'add_memo',
+                  onPressed: () =>
+                      _showAddMemoSheet(context, ref, currentTreeAsync.value!),
+                  backgroundColor: Colors.pink,
+                  child: const Icon(Icons.add),
+                ),
+              ],
             )
           : null,
     );
@@ -81,7 +108,7 @@ class VillageScreen extends ConsumerWidget {
         SafeArea(
           child: Column(
             children: [
-              _buildHeader(tree),
+              _buildHeader(tree, context, ref),
               Expanded(
                 child: Center(
                   child: TreeWidget(tree: tree),
@@ -95,7 +122,7 @@ class VillageScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader(LoveTree tree) {
+  Widget _buildHeader(LoveTree tree, BuildContext context, WidgetRef ref) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Row(
@@ -118,26 +145,144 @@ class VillageScreen extends ConsumerWidget {
               ),
             ],
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.pink.shade100,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.favorite, color: Colors.pink, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  '${tree.lovePoints}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
+          Row(
+            children: [
+              // Love Points
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
                 ),
-              ],
-            ),
+                decoration: BoxDecoration(
+                  color: Colors.pink.shade100,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.favorite, color: Colors.pink, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${tree.lovePoints}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Menu button
+              IconButton(
+                onPressed: () {
+                  _showMenuBottomSheet(context, tree, ref);
+                },
+                icon: const Icon(Icons.menu),
+                color: Colors.black87,
+              ),
+            ],
           ),
+        ],
+      ),
+    );
+  }
+
+  void _showMenuBottomSheet(
+    BuildContext context,
+    LoveTree tree,
+    WidgetRef ref,
+  ) {
+    // You need 'ref' to call the authController, so let's get it.
+    // One way is to pass it as an argument.
+    final authController = ref.read(authControllerProvider.notifier);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.list, color: Colors.purple),
+              title: const Text('View All Memories'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => MemoListScreen(
+                      treeId: tree.id,
+                      treeName: tree.name,
+                    ),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.info_outline, color: Colors.blue),
+              title: const Text('Tree Info'),
+              onTap: () {
+                Navigator.pop(context);
+                _showTreeInfoDialog(context, tree);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.logout, color: Colors.red),
+              title: const Text('Sign Out'),
+              onTap: () {
+                Navigator.pop(context);
+                // Call the signOut method from your auth controller
+                authController.signOut();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showTreeInfoDialog(BuildContext context, LoveTree tree) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(tree.name),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildInfoRow('Level', '${tree.level}'),
+            _buildInfoRow('Height', '${tree.height.toInt()} cm'),
+            _buildInfoRow('Love Points', '${tree.lovePoints}'),
+            _buildInfoRow('Happiness', '${(tree.happiness * 100).toInt()}%'),
+            _buildInfoRow('Health', '${(tree.health * 100).toInt()}%'),
+            _buildInfoRow('Stage', tree.stage.name),
+            _buildInfoRow('Mood', tree.mood.name),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+          Text(value),
         ],
       ),
     );
