@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:memora/fetures/auth/screen/login_screen.dart';
+import 'package:memora/fetures/auth/screen/signup_screen.dart';
 import 'package:memora/fetures/onboarding/screen/splash_screen.dart';
 import 'package:memora/fetures/tree/screen/village_screen.dart';
+import 'package:memora/main.dart';
 
 class AppRouter {
   // Route names
@@ -33,15 +35,15 @@ class AppRouter {
           builder: (_) => const LoginScreen(),
         );
 
-      // case signup:
-      //   return MaterialPageRoute(
-      //     builder: (_) => const SignupScreen(),
-      //   );
+      case signup:
+        return MaterialPageRoute(
+          builder: (_) => const SignupScreen(),
+        );
 
-      // case pairing:
-      //   return MaterialPageRoute(
-      //     builder: (_) => const PairingScreen(),
-      //   );
+      case pairing:
+        return MaterialPageRoute(
+          builder: (_) => const PairingScreen(),
+        );
 
       case village:
         final coupleId = settings.arguments as String;

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
+import 'package:memora/core/constants/animation_assets.dart';
 import 'package:memora/fetures/tree/model/love_tree.dart';
 
 class TreeWidget extends StatefulWidget {
@@ -71,21 +72,38 @@ class _TreeWidgetState extends State<TreeWidget>
     // Use different Lottie animations or custom drawings
     String animation;
 
+    // switch (stage) {
+    //   case TreeStage.seedling:
+    //     animation = 'assets/animations/seedling.json';
+    //     break;
+    //   case TreeStage.growing:
+    //     animation = 'assets/animations/growing_tree.json';
+    //     break;
+    //   case TreeStage.blooming:
+    //     animation = 'assets/animations/blooming_tree.json';
+    //     break;
+    //   case TreeStage.mature:
+    //     animation = 'assets/animations/mature_tree.json';
+    //     break;
+    //   case TreeStage.withering:
+    //     animation = 'assets/animations/withering_tree.json';
+    //     break;
+    // }
     switch (stage) {
       case TreeStage.seedling:
-        animation = 'assets/animations/seedling.json';
+        animation = AnimationAssets.tree;
         break;
       case TreeStage.growing:
-        animation = 'assets/animations/growing_tree.json';
+        animation = AnimationAssets.tree;
         break;
       case TreeStage.blooming:
-        animation = 'assets/animations/blooming_tree.json';
+        animation = AnimationAssets.cherry;
         break;
       case TreeStage.mature:
-        animation = 'assets/animations/mature_tree.json';
+        animation = AnimationAssets.tree;
         break;
       case TreeStage.withering:
-        animation = 'assets/animations/withering_tree.json';
+        animation = AnimationAssets.leaf;
         break;
     }
 
@@ -118,7 +136,8 @@ class _TreeWidgetState extends State<TreeWidget>
     return Positioned.fill(
       child: IgnorePointer(
         child: Lottie.asset(
-          'assets/animations/particles.json',
+          // 'assets/animations/particles.json',
+          AnimationAssets.leaf,
           fit: BoxFit.cover,
         ),
       ),
@@ -159,7 +178,7 @@ class TreePainter extends CustomPainter {
 
       // Simple branch pattern
       for (int i = 0; i < (stage.index + 1) * 3; i++) {
-        final angle = (i * 60) * (3.14159 / 180);
+        // final angle = (i * 60) * (3.14159 / 180);
         final branchLength = 30.0 + (stage.index * 10);
         canvas.drawLine(
           Offset(size.width / 2, size.height - 50 - (i * 15)),

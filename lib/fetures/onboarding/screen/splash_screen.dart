@@ -38,14 +38,6 @@ class _SplashScreenState extends State<SplashScreen>
     );
 
     _controller.forward();
-
-    // Navigate after animation (auth wrapper will handle routing)
-    Timer(const Duration(seconds: 2), () {
-      if (mounted) {
-        // AuthWrapper in main.dart will handle navigation automatically
-        // Just trigger a rebuild by doing nothing - auth state will update
-      }
-    });
   }
 
   @override
