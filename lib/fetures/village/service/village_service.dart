@@ -167,8 +167,10 @@ class VillageService {
           'lovePoints': 0,
           'createdAt': FieldValue.serverTimestamp(),
           'lastInteraction': FieldValue.serverTimestamp(),
-          'stage': 'seedling',
+          'stage': 'notPlanted',
           'memoryCount': 0,
+          'isPlanted': false,
+          'plantedBy': [], // Track who has planted
         });
   }
 
