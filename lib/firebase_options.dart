@@ -50,19 +50,20 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBkv2wS71IifMzoSE0UZ2skTu5zqrF5YBE',
-    appId: '1:696619299943:android:e310411256f1d3d7ba50c2',
-    messagingSenderId: '696619299943',
-    projectId: 'memora-6a52a',
-    storageBucket: 'memora-6a52a.firebasestorage.app',
+    apiKey: 'AIzaSyBOJu4W7WPF_XnDZ65JdjAQYg83p9THz6o',
+    appId: '1:354172507933:android:a479e4fb3ce5c90f7433f4',
+    messagingSenderId: '354172507933',
+    projectId: 'memora-214bc',
+    storageBucket: 'memora-214bc.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyATfIiGWkN38-Jbd9Z1tOJqAhHX1Ny8zH0',
-    appId: '1:696619299943:ios:01417096a309e754ba50c2',
-    messagingSenderId: '696619299943',
-    projectId: 'memora-6a52a',
-    storageBucket: 'memora-6a52a.firebasestorage.app',
+    apiKey: 'AIzaSyCehkFCEBxRnNaliXBrmOYqc2se1oRvgLU',
+    appId: '1:354172507933:ios:fefd690b41c9f00e7433f4',
+    messagingSenderId: '354172507933',
+    projectId: 'memora-214bc',
+    storageBucket: 'memora-214bc.firebasestorage.app',
     iosBundleId: 'com.example.memora',
   );
+
 }
