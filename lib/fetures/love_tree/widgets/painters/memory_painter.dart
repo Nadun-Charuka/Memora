@@ -470,25 +470,73 @@ class MemoryPainter {
     int index,
     int total,
   ) {
-    final spiralTurns = (index / total) * 2.5;
-    final angle = spiralTurns * math.pi * 2;
-    final radiusProgress = (index / total);
-    double maxRadius = 80.0;
-    double yOffset = trunkHeight * 0.6;
-    if (tree.stage == TreeStage.seedling) {
-      maxRadius = 25.0;
-      yOffset = trunkHeight * 0.5;
-    } else if (tree.stage == TreeStage.growing) {
-      maxRadius = 50.0;
-      yOffset = trunkHeight * 0.6;
-    } else if (tree.stage == TreeStage.blooming) {
-      maxRadius = 80.0;
-      yOffset = trunkHeight * 0.7;
+    // Only butterflies (nostalgic) fly around the tree
+    if (memory.emotion == MemoryEmotion.nostalgic) {
+      // Random circular orbit around tree
+      final random = math.Random(index + 100);
+      final orbitSpeed = 0.2 + (random.nextDouble() * 0.3);
+      final orbitProgress =
+          (animation.value * orbitSpeed + (index / total)) % 1.0;
+      final angle = orbitProgress * math.pi * 2;
+
+      // Wider orbit radius based on tree stage
+      double maxRadius = 120.0;
+      double yCenter = trunkHeight * 0.6;
+      if (tree.stage == TreeStage.seedling) {
+        maxRadius = 40.0;
+        yCenter = trunkHeight * 0.5;
+      } else if (tree.stage == TreeStage.growing) {
+        maxRadius = 80.0;
+        yCenter = trunkHeight * 0.6;
+      } else if (tree.stage == TreeStage.blooming) {
+        maxRadius = 120.0;
+        yCenter = trunkHeight * 0.7;
+      }
+
+      // Each butterfly has random orbit radius
+      final orbitRadius = maxRadius * (0.5 + random.nextDouble() * 0.5);
+
+      // Random wave patterns for more organic movement
+      final waveFreq = 3.0 + random.nextDouble() * 3.0;
+      final waveAmp = 15.0 + random.nextDouble() * 20.0;
+      final radiusVariation =
+          math.sin(orbitProgress * math.pi * 2.5) * (maxRadius * 0.2);
+
+      // Calculate position with randomized vertical and horizontal wave motion
+      final x =
+          centerX +
+          math.cos(angle) * (orbitRadius + radiusVariation) +
+          math.sin(orbitProgress * math.pi * waveFreq) * 10;
+      final y =
+          groundY -
+          yCenter +
+          math.sin(angle) * orbitRadius * 0.5 +
+          math.sin(orbitProgress * math.pi * waveFreq) * waveAmp;
+
+      _drawMemoryIcon(canvas, Offset(x, y), memory.emotion);
+    } else {
+      // Other memories stay in spiral pattern
+      final spiralTurns = (index / total) * 2.5;
+      final angle = spiralTurns * math.pi * 2;
+      final radiusProgress = (index / total);
+      double maxRadius = 80.0;
+      double yOffset = trunkHeight * 0.6;
+      if (tree.stage == TreeStage.seedling) {
+        maxRadius = 25.0;
+        yOffset = trunkHeight * 0.5;
+      } else if (tree.stage == TreeStage.growing) {
+        maxRadius = 50.0;
+        yOffset = trunkHeight * 0.6;
+      } else if (tree.stage == TreeStage.blooming) {
+        maxRadius = 80.0;
+        yOffset = trunkHeight * 0.7;
+      }
+      final radius = 15 + (radiusProgress * maxRadius);
+      final x = centerX + math.cos(angle) * radius;
+      final y = groundY - yOffset + math.sin(angle) * radius * 0.3;
+
+      _drawMemoryIcon(canvas, Offset(x, y), memory.emotion);
     }
-    final radius = 15 + (radiusProgress * maxRadius);
-    final x = centerX + math.cos(angle) * radius;
-    final y = groundY - yOffset + math.sin(angle) * radius * 0.3;
-    _drawMemoryIcon(canvas, Offset(x, y), memory.emotion);
   }
 
   void _drawMemoryIcon(Canvas canvas, Offset position, MemoryEmotion emotion) {

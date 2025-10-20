@@ -15,18 +15,17 @@ abstract class TreeStagePainter {
 
   TreeStagePainter({required this.animation, required this.tree})
     : groundPainter = GroundPainter(animation: animation),
-      random = math.Random(1); // Seeded for consistent "randomness"
+      random = math.Random(1);
 
   void paint(Canvas canvas, Size size, double centerX, double groundY);
 }
 
-// 1. Unplanted State Painter (No changes needed here)
+// 1. Unplanted State Painter
 class UnplantedPainter extends TreeStagePainter {
   UnplantedPainter({required super.animation, required super.tree});
 
   @override
   void paint(Canvas canvas, Size size, double centerX, double groundY) {
-    // ... (This class is correct)
     groundPainter.paint(canvas, size, groundY);
 
     final glowPaint = Paint()
@@ -54,64 +53,122 @@ class UnplantedPainter extends TreeStagePainter {
   }
 }
 
-// 2. Seedling State Painter - ADVANCED (No changes needed here)
+// 2. Seedling State - Young sprout with first leaves
 class SeedlingPainter extends TreeStagePainter {
   SeedlingPainter({required super.animation, required super.tree});
 
   @override
   void paint(Canvas canvas, Size size, double centerX, double groundY) {
-    // ... (This class is correct)
     groundPainter.paint(canvas, size, groundY);
 
     final stemHeight = tree.height * 2;
-    final sway = math.sin(animation.value * math.pi) * 2; // Slower sway
+    final sway = math.sin(animation.value * math.pi * 2) * 3;
 
-    final stemPaint = Paint()..style = PaintingStyle.fill;
-    final rect = Rect.fromCenter(
-      center: Offset(centerX, groundY - stemHeight / 2),
-      width: 4,
-      height: stemHeight,
-    );
-    stemPaint.shader = LinearGradient(
-      begin: Alignment.centerLeft,
-      end: Alignment.centerRight,
-      colors: [const Color(0xFF4A7C59), const Color(0xFF6B9B78)],
-    ).createShader(rect);
+    // Draw thin, delicate stem
+    final stemPaint = Paint()
+      ..style = PaintingStyle.fill
+      ..shader =
+          LinearGradient(
+            begin: Alignment.bottomCenter,
+            end: Alignment.topCenter,
+            colors: [
+              const Color(0xFF4A7C59),
+              const Color(0xFF7CB342),
+            ],
+          ).createShader(
+            Rect.fromLTWH(
+              centerX - 2,
+              groundY - stemHeight,
+              4,
+              stemHeight,
+            ),
+          );
 
-    final path = Path()
-      ..moveTo(centerX - 2, groundY)
+    final stemPath = Path()
+      ..moveTo(centerX - 1.5, groundY)
       ..quadraticBezierTo(
-        centerX + sway,
-        groundY - stemHeight / 2,
-        centerX - 2 + sway,
+        centerX + sway * 0.5,
+        groundY - stemHeight * 0.5,
+        centerX - 1 + sway,
         groundY - stemHeight,
       )
-      ..lineTo(centerX + 2 + sway, groundY - stemHeight)
+      ..lineTo(centerX + 1 + sway, groundY - stemHeight)
       ..quadraticBezierTo(
-        centerX + 2 + sway,
-        groundY - stemHeight / 2,
-        centerX + 2,
+        centerX + sway * 0.5,
+        groundY - stemHeight * 0.5,
+        centerX + 1.5,
         groundY,
       )
       ..close();
-    canvas.drawPath(path, stemPaint);
+    canvas.drawPath(stemPath, stemPaint);
 
-    _drawDetailedLeaf(
+    // Draw young leaves
+    _drawYoungLeaf(
       canvas,
-      Offset(centerX - 5 + sway, groundY - stemHeight * 0.6),
-      12,
-      -0.6,
+      Offset(centerX - 8 + sway, groundY - stemHeight * 0.5),
+      15,
+      -0.7,
     );
-    _drawDetailedLeaf(
+    _drawYoungLeaf(
       canvas,
-      Offset(centerX + 5 - sway, groundY - stemHeight * 0.8),
-      12,
-      0.6,
+      Offset(centerX + 8 + sway * 0.8, groundY - stemHeight * 0.7),
+      15,
+      0.7,
     );
+    _drawYoungLeaf(
+      canvas,
+      Offset(centerX - 6 + sway * 0.9, groundY - stemHeight * 0.85),
+      12,
+      -0.5,
+    );
+    _drawYoungLeaf(
+      canvas,
+      Offset(centerX + sway, groundY - stemHeight),
+      18,
+      0.1,
+    );
+  }
+
+  void _drawYoungLeaf(
+    Canvas canvas,
+    Offset center,
+    double size,
+    double rotation,
+  ) {
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate(rotation);
+
+    final leafPaint = Paint()
+      ..style = PaintingStyle.fill
+      ..shader = RadialGradient(
+        colors: [
+          const Color(0xFF9CCC65),
+          const Color(0xFF7CB342),
+          const Color(0xFF558B2F),
+        ],
+        stops: [0.0, 0.5, 1.0],
+      ).createShader(Rect.fromCircle(center: Offset.zero, radius: size));
+
+    final path = Path()
+      ..moveTo(0, -size * 0.5)
+      ..quadraticBezierTo(size * 0.6, -size * 0.2, size * 0.7, size * 0.1)
+      ..quadraticBezierTo(size * 0.5, size * 0.3, 0, size * 0.5)
+      ..quadraticBezierTo(-size * 0.5, size * 0.3, -size * 0.7, size * 0.1)
+      ..quadraticBezierTo(-size * 0.6, -size * 0.2, 0, -size * 0.5);
+    canvas.drawPath(path, leafPaint);
+
+    final veinPaint = Paint()
+      ..color = const Color(0xFF558B2F).withOpacity(0.4)
+      ..strokeWidth = 1.2
+      ..style = PaintingStyle.stroke;
+    canvas.drawLine(Offset(0, -size * 0.4), Offset(0, size * 0.4), veinPaint);
+
+    canvas.restore();
   }
 }
 
-// 3. Growing State Painter - ADVANCED
+// 3. Growing State - Young tree with spreading branches
 class GrowingPainter extends TreeStagePainter {
   GrowingPainter({required super.animation, required super.tree});
 
@@ -120,38 +177,170 @@ class GrowingPainter extends TreeStagePainter {
     groundPainter.paint(canvas, size, groundY);
 
     final trunkHeight = tree.height * 1.5;
-    final windSway = math.sin(animation.value * math.pi) * 3;
+    final windSway = math.sin(animation.value * math.pi * 2) * 2;
 
-    // MODIFIED: Pass 'animation' into the helper function
-    _drawRealisticTrunk(
-      canvas,
-      centerX,
-      groundY,
-      trunkHeight,
-      12,
-      windSway,
-      animation,
-    );
+    // Draw broader trunk
+    _drawYoungTrunk(canvas, centerX, groundY, trunkHeight, 10, windSway);
 
+    // Draw spreading branches with more foliage
     final branches = [
-      {'y': 0.4, 'length': 40.0, 'angle': -0.8, 'width': 5.0},
-      {'y': 0.42, 'length': 40.0, 'angle': 0.8, 'width': 5.0},
-      {'y': 0.65, 'length': 35.0, 'angle': -0.7, 'width': 4.0},
-      {'y': 0.67, 'length': 35.0, 'angle': 0.7, 'width': 4.0},
-      {'y': 0.9, 'length': 25.0, 'angle': 0.2, 'width': 3.0},
+      {'y': 0.35, 'length': 45.0, 'angle': -0.9, 'leaves': 8},
+      {'y': 0.38, 'length': 45.0, 'angle': 0.9, 'leaves': 8},
+      {'y': 0.55, 'length': 50.0, 'angle': -0.7, 'leaves': 10},
+      {'y': 0.58, 'length': 50.0, 'angle': 0.7, 'leaves': 10},
+      {'y': 0.75, 'length': 40.0, 'angle': -0.6, 'leaves': 7},
+      {'y': 0.78, 'length': 40.0, 'angle': 0.6, 'leaves': 7},
+      {'y': 0.9, 'length': 30.0, 'angle': 0.0, 'leaves': 6},
     ];
 
     for (var branchData in branches) {
       final y = groundY - trunkHeight * (branchData['y'] as double);
       final branchSway = windSway * (1.0 - (branchData['y'] as double));
       final startOffset = Offset(centerX + branchSway, y);
-      // MODIFIED: Pass 'animation' into the helper function
-      _drawRealisticBranch(canvas, startOffset, branchData, 1, animation);
+      _drawSpreadingBranch(canvas, startOffset, branchData, animation);
     }
+  }
+
+  void _drawYoungTrunk(
+    Canvas canvas,
+    double centerX,
+    double groundY,
+    double height,
+    double width,
+    double sway,
+  ) {
+    final trunkPaint = Paint()
+      ..shader =
+          LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            colors: [
+              const Color(0xFF6D4C41),
+              const Color(0xFF8D6E63),
+              const Color(0xFF5D4037),
+            ],
+            stops: [0.0, 0.5, 1.0],
+          ).createShader(
+            Rect.fromLTWH(
+              centerX - width,
+              groundY - height,
+              width * 2,
+              height,
+            ),
+          );
+
+    final path = Path()
+      ..moveTo(centerX - width * 0.8, groundY + 3)
+      ..lineTo(centerX - width * 0.4, groundY - 5)
+      ..lineTo(centerX - width * 0.3 + sway, groundY - height)
+      ..lineTo(centerX + width * 0.3 + sway, groundY - height)
+      ..lineTo(centerX + width * 0.4, groundY - 5)
+      ..lineTo(centerX + width * 0.8, groundY + 3)
+      ..close();
+
+    canvas.drawPath(path, trunkPaint);
+
+    // Bark texture
+    final barkPaint = Paint()
+      ..color = Colors.black.withOpacity(0.2)
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
+
+    for (double i = 0; i < height; i += 12) {
+      canvas.drawLine(
+        Offset(centerX - width * 0.3, groundY - i),
+        Offset(centerX + width * 0.2, groundY - i - 8),
+        barkPaint,
+      );
+    }
+  }
+
+  void _drawSpreadingBranch(
+    Canvas canvas,
+    Offset start,
+    Map<String, dynamic> branchData,
+    Animation<double> animation,
+  ) {
+    final length = branchData['length'] as double;
+    final angle = branchData['angle'] as double;
+    final leafCount = branchData['leaves'] as int;
+
+    final branchPaint = Paint()
+      ..color = const Color(0xFF6D4C41)
+      ..strokeWidth = 5
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
+    final endPoint = Offset(
+      start.dx + length * math.sin(angle),
+      start.dy - length * math.cos(angle),
+    );
+
+    canvas.drawLine(start, endPoint, branchPaint);
+
+    // Draw leaf cluster at branch end
+    _drawLeafCluster(canvas, endPoint, leafCount, 12, angle, animation);
+  }
+
+  void _drawLeafCluster(
+    Canvas canvas,
+    Offset center,
+    int count,
+    double size,
+    double baseAngle,
+    Animation<double> animation,
+  ) {
+    final clusterRandom = math.Random(center.dx.toInt());
+
+    for (int i = 0; i < count; i++) {
+      final angle = baseAngle + (clusterRandom.nextDouble() - 0.5) * 2.0;
+      final distance = clusterRandom.nextDouble() * size * 1.5;
+      final rustle = math.sin(animation.value * math.pi * 4 + i) * 2;
+
+      final leafPos = Offset(
+        center.dx + math.cos(angle) * distance + rustle,
+        center.dy + math.sin(angle) * distance,
+      );
+
+      final leafSize = size * (0.7 + clusterRandom.nextDouble() * 0.6);
+      _drawYoungLeaf(canvas, leafPos, leafSize, angle);
+    }
+  }
+
+  void _drawYoungLeaf(
+    Canvas canvas,
+    Offset center,
+    double size,
+    double rotation,
+  ) {
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate(rotation);
+
+    final leafPaint = Paint()
+      ..style = PaintingStyle.fill
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          const Color(0xFF7CB342),
+          const Color(0xFF558B2F),
+        ],
+      ).createShader(Rect.fromCircle(center: Offset.zero, radius: size));
+
+    final path = Path()
+      ..moveTo(0, -size * 0.5)
+      ..quadraticBezierTo(size * 0.5, -size * 0.2, size * 0.6, 0)
+      ..quadraticBezierTo(size * 0.5, size * 0.2, 0, size * 0.5)
+      ..quadraticBezierTo(-size * 0.5, size * 0.2, -size * 0.6, 0)
+      ..quadraticBezierTo(-size * 0.5, -size * 0.2, 0, -size * 0.5);
+    canvas.drawPath(path, leafPaint);
+
+    canvas.restore();
   }
 }
 
-// 4. Blooming State Painter - ADVANCED
+// 4. Blooming State - Tree with flowers
 class BloomingPainter extends TreeStagePainter {
   BloomingPainter({required super.animation, required super.tree});
 
@@ -160,40 +349,219 @@ class BloomingPainter extends TreeStagePainter {
     groundPainter.paint(canvas, size, groundY);
 
     final trunkHeight = tree.height * 1.2;
-    final windSway = math.sin(animation.value * math.pi) * 4;
+    final windSway = math.sin(animation.value * math.pi * 2) * 3;
 
-    // MODIFIED: Pass 'animation' into the helper function
-    _drawRealisticTrunk(
-      canvas,
-      centerX,
-      groundY,
-      trunkHeight,
-      20,
-      windSway,
-      animation,
-    );
+    // Draw mature trunk
+    _drawMatureTrunk(canvas, centerX, groundY, trunkHeight, 18, windSway);
 
+    // Draw flowering branches
     final branches = [
-      {'y': 0.3, 'length': 60.0, 'angle': -0.9, 'width': 8.0},
-      {'y': 0.32, 'length': 60.0, 'angle': 0.9, 'width': 8.0},
-      {'y': 0.5, 'length': 55.0, 'angle': -0.7, 'width': 7.0},
-      {'y': 0.52, 'length': 55.0, 'angle': 0.7, 'width': 7.0},
-      {'y': 0.7, 'length': 45.0, 'angle': -0.6, 'width': 6.0},
-      {'y': 0.72, 'length': 45.0, 'angle': 0.6, 'width': 6.0},
-      {'y': 0.9, 'length': 35.0, 'angle': 0.2, 'width': 5.0},
+      {'y': 0.25, 'length': 70.0, 'angle': -1.0, 'flowers': 12},
+      {'y': 0.28, 'length': 70.0, 'angle': 1.0, 'flowers': 12},
+      {'y': 0.45, 'length': 65.0, 'angle': -0.8, 'flowers': 10},
+      {'y': 0.48, 'length': 65.0, 'angle': 0.8, 'flowers': 10},
+      {'y': 0.65, 'length': 55.0, 'angle': -0.7, 'flowers': 8},
+      {'y': 0.68, 'length': 55.0, 'angle': 0.7, 'flowers': 8},
+      {'y': 0.82, 'length': 45.0, 'angle': -0.5, 'flowers': 6},
+      {'y': 0.85, 'length': 45.0, 'angle': 0.5, 'flowers': 6},
+      {'y': 0.99, 'length': 25.0, 'angle': 0.1, 'flowers': 6},
     ];
 
     for (var branchData in branches) {
       final y = groundY - trunkHeight * (branchData['y'] as double);
       final branchSway = windSway * (1.0 - (branchData['y'] as double));
       final startOffset = Offset(centerX + branchSway, y);
-      // MODIFIED: Pass 'animation' into the helper function
-      _drawRealisticBranch(canvas, startOffset, branchData, 2, animation);
+      _drawFloweringBranch(canvas, startOffset, branchData, animation);
     }
+  }
+
+  void _drawMatureTrunk(
+    Canvas canvas,
+    double centerX,
+    double groundY,
+    double height,
+    double width,
+    double sway,
+  ) {
+    final trunkPaint = Paint()
+      ..shader =
+          LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            colors: [
+              const Color(0xFF5D4037),
+              const Color(0xFF8D6E63),
+              const Color(0xFF6D4C41),
+            ],
+          ).createShader(
+            Rect.fromLTWH(
+              centerX - width,
+              groundY - height,
+              width * 2,
+              height,
+            ),
+          );
+
+    final path = Path()
+      ..moveTo(centerX - width, groundY + 5)
+      ..quadraticBezierTo(
+        centerX - width * 0.6,
+        groundY - 10,
+        centerX - width * 0.5,
+        groundY - 20,
+      )
+      ..lineTo(centerX - width * 0.35 + sway, groundY - height)
+      ..lineTo(centerX + width * 0.35 + sway, groundY - height)
+      ..lineTo(centerX + width * 0.5, groundY - 20)
+      ..quadraticBezierTo(
+        centerX + width * 0.6,
+        groundY - 10,
+        centerX + width,
+        groundY + 5,
+      )
+      ..close();
+
+    canvas.drawPath(path, trunkPaint);
+
+    // Detailed bark texture
+    final barkPaint = Paint()
+      ..color = Colors.black.withOpacity(0.25)
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
+
+    for (double i = 0; i < height; i += 10) {
+      final offset = math.sin(i * 0.3) * 3;
+      canvas.drawLine(
+        Offset(centerX - width * 0.3 + offset, groundY - i),
+        Offset(centerX + width * 0.2 + offset, groundY - i - 7),
+        barkPaint,
+      );
+    }
+  }
+
+  void _drawFloweringBranch(
+    Canvas canvas,
+    Offset start,
+    Map<String, dynamic> branchData,
+    Animation<double> animation,
+  ) {
+    final length = branchData['length'] as double;
+    final angle = branchData['angle'] as double;
+    final flowerCount = branchData['flowers'] as int;
+
+    final branchPaint = Paint()
+      ..color = const Color(0xFF6D4C41)
+      ..strokeWidth = 6
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
+    final midPoint = Offset(
+      start.dx + (length * 0.6) * math.sin(angle),
+      start.dy - (length * 0.6) * math.cos(angle),
+    );
+
+    final endPoint = Offset(
+      start.dx + length * math.sin(angle),
+      start.dy - length * math.cos(angle),
+    );
+
+    final branchPath = Path()
+      ..moveTo(start.dx, start.dy)
+      ..quadraticBezierTo(midPoint.dx, midPoint.dy, endPoint.dx, endPoint.dy);
+
+    canvas.drawPath(branchPath, branchPaint);
+
+    // Draw flowers and leaves
+    _drawFlowerCluster(canvas, endPoint, flowerCount, angle, animation);
+  }
+
+  void _drawFlowerCluster(
+    Canvas canvas,
+    Offset center,
+    int count,
+    double baseAngle,
+    Animation<double> animation,
+  ) {
+    final clusterRandom = math.Random(center.dx.toInt());
+
+    for (int i = 0; i < count; i++) {
+      final angle = baseAngle + (clusterRandom.nextDouble() - 0.5) * 2.5;
+      final distance = clusterRandom.nextDouble() * 20;
+      final bloom = (math.sin(animation.value * math.pi * 2 + i) + 1) / 2;
+
+      final flowerPos = Offset(
+        center.dx + math.cos(angle) * distance,
+        center.dy + math.sin(angle) * distance,
+      );
+
+      if (i % 3 == 0) {
+        _drawFlower(canvas, flowerPos, bloom);
+      } else {
+        _drawLeafSimple(canvas, flowerPos, 10, angle);
+      }
+    }
+  }
+
+  void _drawFlower(Canvas canvas, Offset center, double bloom) {
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+
+    final petalPaint = Paint()..style = PaintingStyle.fill;
+
+    // Draw petals
+    for (int i = 0; i < 5; i++) {
+      canvas.save();
+      canvas.rotate((i * math.pi * 2 / 5));
+
+      petalPaint.shader = RadialGradient(
+        colors: [
+          const Color(0xFFFFFFFF),
+          const Color(0xFFFFB6C1),
+        ],
+      ).createShader(Rect.fromCircle(center: Offset.zero, radius: 8 * bloom));
+
+      final petalPath = Path()
+        ..moveTo(0, 0)
+        ..quadraticBezierTo(4 * bloom, -6 * bloom, 0, -10 * bloom)
+        ..quadraticBezierTo(-4 * bloom, -6 * bloom, 0, 0);
+      canvas.drawPath(petalPath, petalPaint);
+      canvas.restore();
+    }
+
+    // Center
+    petalPaint.shader = null;
+    petalPaint.color = const Color(0xFFFFD700);
+    canvas.drawCircle(Offset.zero, 3 * bloom, petalPaint);
+
+    canvas.restore();
+  }
+
+  void _drawLeafSimple(
+    Canvas canvas,
+    Offset center,
+    double size,
+    double rotation,
+  ) {
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate(rotation);
+
+    final leafPaint = Paint()
+      ..color = const Color(0xFF7CB342)
+      ..style = PaintingStyle.fill;
+
+    final path = Path()
+      ..moveTo(0, -size * 0.5)
+      ..quadraticBezierTo(size * 0.4, -size * 0.2, size * 0.5, 0)
+      ..quadraticBezierTo(size * 0.4, size * 0.2, 0, size * 0.5)
+      ..quadraticBezierTo(-size * 0.4, size * 0.2, -size * 0.5, 0)
+      ..quadraticBezierTo(-size * 0.4, -size * 0.2, 0, -size * 0.5);
+    canvas.drawPath(path, leafPaint);
+
+    canvas.restore();
   }
 }
 
-// 5. Mature State Painter - ADVANCED
 class MaturePainter extends TreeStagePainter {
   MaturePainter({required super.animation, required super.tree});
 
