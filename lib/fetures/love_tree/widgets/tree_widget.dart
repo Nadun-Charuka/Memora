@@ -128,7 +128,7 @@ class _TreeWidgetState extends State<TreeWidget> with TickerProviderStateMixin {
           children: [
             // Compact header - always visible
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 Row(
                   children: [
@@ -159,17 +159,8 @@ class _TreeWidgetState extends State<TreeWidget> with TickerProviderStateMixin {
                 ),
                 Row(
                   children: [
+                    const SizedBox(width: 12),
                     // Quick stats when collapsed
-                    if (!_isCardExpanded && widget.tree.isPlanted) ...[
-                      _buildMiniStat('💚', (widget.tree.health * 100).toInt()),
-                      const SizedBox(width: 8),
-                      _buildMiniStat(
-                        '😊',
-                        (widget.tree.happiness * 100).toInt(),
-                      ),
-                      const SizedBox(width: 12),
-                    ],
-                    // Expand/collapse indicator
                     AnimatedRotation(
                       turns: _isCardExpanded ? 0.5 : 0,
                       duration: const Duration(milliseconds: 300),
@@ -179,6 +170,15 @@ class _TreeWidgetState extends State<TreeWidget> with TickerProviderStateMixin {
                         size: 28,
                       ),
                     ),
+                    const SizedBox(width: 12),
+                    if (!_isCardExpanded && widget.tree.isPlanted) ...[
+                      _buildMiniStat('💚', (widget.tree.health * 100).toInt()),
+                      const SizedBox(width: 8),
+                      _buildMiniStat(
+                        '😊',
+                        (widget.tree.happiness * 100).toInt(),
+                      ),
+                    ],
                   ],
                 ),
               ],
