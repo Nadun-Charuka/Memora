@@ -18,6 +18,9 @@ class TreePainter extends CustomPainter {
     final centerX = size.width / 2;
     final groundY = size.height * 0.85;
 
+    // Draw sky gradient background
+    _drawSky(canvas, size);
+
     // Scale everything 2x larger for a zoomed-in feel
     canvas.save();
     canvas.translate(centerX, groundY);
@@ -49,43 +52,92 @@ class TreePainter extends CustomPainter {
         break;
     }
 
-    // Draw memories as decorations on the tree
-    if (tree.isPlanted) {
-      _drawMemories(canvas, size, centerX, groundY);
-    }
-
     canvas.restore();
+
+    // Draw memories with advanced animations (outside transform)
+    if (tree.isPlanted) {
+      _drawMemoriesAdvanced(canvas, size, centerX, groundY);
+    }
   }
 
-  // Draw unplanted state (just ground and marker)
+  // Draw beautiful sky gradient
+  void _drawSky(Canvas canvas, Size size) {
+    final skyGradient = LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [
+        const Color(0xFF87CEEB), // Sky blue
+        const Color(0xFFB0E0E6), // Powder blue
+        const Color(0xFFFFE4B5), // Moccasin (horizon)
+      ],
+    );
+
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      Paint()
+        ..shader = skyGradient.createShader(
+          Rect.fromLTWH(0, 0, size.width, size.height),
+        ),
+    );
+
+    // Draw clouds
+    _drawClouds(canvas, size);
+  }
+
+  // Draw floating clouds
+  void _drawClouds(Canvas canvas, Size size) {
+    final cloudPaint = Paint()
+      ..color = Colors.white.withOpacity(0.7)
+      ..style = PaintingStyle.fill;
+
+    // Animate clouds moving across
+    final cloudOffset = (animation.value * 100) % (size.width + 200);
+
+    // Cloud 1
+    _drawCloud(canvas, Offset(cloudOffset - 100, 40), cloudPaint);
+
+    // Cloud 2
+    _drawCloud(canvas, Offset(cloudOffset + size.width / 2, 80), cloudPaint);
+
+    // Cloud 3
+    _drawCloud(canvas, Offset(cloudOffset - 200, 120), cloudPaint);
+  }
+
+  void _drawCloud(Canvas canvas, Offset position, Paint paint) {
+    canvas.drawCircle(position, 20, paint);
+    canvas.drawCircle(position.translate(15, -5), 25, paint);
+    canvas.drawCircle(position.translate(30, 0), 20, paint);
+    canvas.drawCircle(position.translate(20, 5), 22, paint);
+  }
+
+  // Draw unplanted state
   void _drawUnplantedState(
     Canvas canvas,
     Size size,
     double centerX,
     double groundY,
   ) {
-    // Draw ground
-    final groundPaint = Paint()
-      ..color = const Color(0xFF8B7355)
-      ..style = PaintingStyle.fill;
+    _drawGround(canvas, size, groundY);
 
-    canvas.drawRect(
-      Rect.fromLTWH(0, groundY, size.width, size.height - groundY),
-      groundPaint,
-    );
+    // Draw planting spot with glow
+    final glowPaint = Paint()
+      ..color = const Color(0xFF6B5345).withOpacity(0.3)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
 
-    // Draw planting spot
+    canvas.drawCircle(Offset(centerX, groundY + 20), 40, glowPaint);
+
     final spotPaint = Paint()
       ..color = const Color(0xFF6B5345)
       ..style = PaintingStyle.fill;
 
-    canvas.drawCircle(
-      Offset(centerX, groundY + 20),
-      30,
-      spotPaint,
-    );
+    canvas.drawCircle(Offset(centerX, groundY + 20), 30, spotPaint);
 
-    // Draw waiting indicator
+    // Animated waiting indicator
+    final scale = 1.0 + math.sin(animation.value * math.pi * 2) * 0.2;
+    canvas.save();
+    canvas.translate(centerX, groundY - 10);
+    canvas.scale(scale);
+
     final textPainter = TextPainter(
       text: const TextSpan(
         text: '🌱',
@@ -94,168 +146,147 @@ class TreePainter extends CustomPainter {
       textDirection: TextDirection.ltr,
     );
     textPainter.layout();
-    textPainter.paint(
-      canvas,
-      Offset(centerX - textPainter.width / 2, groundY - 10),
-    );
+    textPainter.paint(canvas, Offset(-textPainter.width / 2, 0));
+    canvas.restore();
   }
 
-  // Draw seedling stage (small sprout)
+  // Draw seedling with subtle sway
   void _drawSeedling(Canvas canvas, Size size, double centerX, double groundY) {
     _drawGround(canvas, size, groundY);
 
     final stemHeight = tree.height * 2;
+    final sway = math.sin(animation.value * math.pi * 2) * 2;
+
     final stemPaint = Paint()
       ..color = const Color(0xFF4A7C59)
       ..strokeWidth = 3
       ..strokeCap = StrokeCap.round;
 
-    // Draw stem
+    // Draw swaying stem
     canvas.drawLine(
       Offset(centerX, groundY),
-      Offset(centerX, groundY - stemHeight),
+      Offset(centerX + sway, groundY - stemHeight),
       stemPaint,
     );
 
-    // Draw 4 small leaves - 2 on each side
+    // Draw animated leaves
     final leafPaint = Paint()
       ..color = const Color(0xFF6B9B78)
       ..style = PaintingStyle.fill;
 
-    // LEFT SIDE
+    final leafSway = math.sin(animation.value * math.pi * 2 + 0.5) * 3;
+
+    // Leaves with gentle movement
     _drawLeaf(
       canvas,
-      Offset(centerX - 8, groundY - stemHeight * 0.5),
+      Offset(centerX - 8 + leafSway, groundY - stemHeight * 0.5),
       8,
       leafPaint,
       -0.4,
     );
     _drawLeaf(
       canvas,
-      Offset(centerX - 10, groundY - stemHeight * 0.7),
+      Offset(centerX - 10 + leafSway, groundY - stemHeight * 0.7),
       7,
       leafPaint,
       -0.5,
     );
-
-    // RIGHT SIDE
     _drawLeaf(
       canvas,
-      Offset(centerX + 8, groundY - stemHeight * 0.6),
+      Offset(centerX + 8 - leafSway, groundY - stemHeight * 0.6),
       8,
       leafPaint,
       0.4,
     );
     _drawLeaf(
       canvas,
-      Offset(centerX + 10, groundY - stemHeight * 0.8),
+      Offset(centerX + 10 - leafSway, groundY - stemHeight * 0.8),
       7,
       leafPaint,
       0.5,
     );
   }
 
-  // Draw growing stage (young tree with balanced branches)
+  // Draw growing tree with wind animation
   void _drawGrowing(Canvas canvas, Size size, double centerX, double groundY) {
     _drawGround(canvas, size, groundY);
 
     final trunkHeight = tree.height * 1.5;
-    final trunkPaint = Paint()
-      ..color = const Color(0xFF654321)
-      ..strokeWidth = 8
-      ..strokeCap = StrokeCap.round;
+    final windSway = math.sin(animation.value * math.pi * 2) * 3;
 
-    // Draw trunk
-    canvas.drawLine(
-      Offset(centerX, groundY),
-      Offset(centerX, groundY - trunkHeight),
-      trunkPaint,
-    );
+    // Draw trunk with texture
+    _drawTrunkWithTexture(canvas, centerX, groundY, trunkHeight, 8, windSway);
 
-    // Draw balanced branches - BOTH SIDES
+    // Draw branches with leaf clusters
     final branchPaint = Paint()
       ..color = const Color(0xFF7D5A3C)
       ..strokeWidth = 4
       ..strokeCap = StrokeCap.round;
 
-    final branchStartY = groundY - trunkHeight * 0.4;
-
-    // 6 branches - alternating left and right
     final branches = [
-      {'y': 0.0, 'length': 25.0, 'angle': -0.6}, // LEFT
-      {'y': 5.0, 'length': 25.0, 'angle': 0.6}, // RIGHT
-      {'y': 15.0, 'length': 30.0, 'angle': -0.7}, // LEFT
-      {'y': 20.0, 'length': 30.0, 'angle': 0.7}, // RIGHT
-      {'y': 30.0, 'length': 28.0, 'angle': -0.65}, // LEFT
-      {'y': 35.0, 'length': 28.0, 'angle': 0.65}, // RIGHT
-    ];
-
-    for (var branch in branches) {
-      final y = branchStartY - (branch['y'] as double);
-      final length = branch['length'] as double;
-      final angle = branch['angle'] as double;
-      final startOffset = Offset(centerX, y);
-
-      _drawBranch(canvas, startOffset, length, angle, branchPaint);
-
-      // Add leaves at the end of the branch
-      // CORRECTED CALCULATION HERE
-      final leafEnd = Offset(
-        startOffset.dx + length * math.sin(angle),
-        startOffset.dy - length * math.cos(angle),
-      );
-      _drawLeafCluster(canvas, leafEnd, 3, 10);
-    }
-  }
-
-  // Draw blooming stage (fuller tree with balanced branches)
-  void _drawBlooming(Canvas canvas, Size size, double centerX, double groundY) {
-    _drawGround(canvas, size, groundY);
-
-    final trunkHeight = tree.height * 1.2;
-    final trunkPaint = Paint()
-      ..color = const Color(0xFF654321)
-      ..strokeWidth = 12
-      ..strokeCap = StrokeCap.round;
-
-    // Draw trunk
-    canvas.drawLine(
-      Offset(centerX, groundY),
-      Offset(centerX, groundY - trunkHeight),
-      trunkPaint,
-    );
-
-    // Draw main branches - PERFECTLY BALANCED BOTH SIDES
-    final branchPaint = Paint()
-      ..color = const Color(0xFF7D5A3C)
-      ..strokeWidth = 6
-      ..strokeCap = StrokeCap.round;
-
-    final branches = [
-      {'y': 0.3, 'length': 50.0, 'angle': -0.7}, // LEFT
-      {'y': 0.32, 'length': 50.0, 'angle': 0.7}, // RIGHT
-      {'y': 0.4, 'length': 55.0, 'angle': -0.65}, // LEFT
-      {'y': 0.42, 'length': 55.0, 'angle': 0.65}, // RIGHT
-      {'y': 0.5, 'length': 60.0, 'angle': -0.6}, // LEFT
-      {'y': 0.52, 'length': 60.0, 'angle': 0.6}, // RIGHT
-      {'y': 0.6, 'length': 50.0, 'angle': -0.55}, // LEFT
-      {'y': 0.62, 'length': 50.0, 'angle': 0.55}, // RIGHT
-      {'y': 0.7, 'length': 45.0, 'angle': -0.5}, // LEFT
-      {'y': 0.72, 'length': 45.0, 'angle': 0.5}, // RIGHT
-      {'y': 0.8, 'length': 40.0, 'angle': -0.5}, // LEFT
-      {'y': 0.82, 'length': 40.0, 'angle': 0.5}, // RIGHT
+      {'y': 0.4, 'length': 30.0, 'angle': -0.6},
+      {'y': 0.42, 'length': 30.0, 'angle': 0.6},
+      {'y': 0.5, 'length': 35.0, 'angle': -0.7},
+      {'y': 0.52, 'length': 35.0, 'angle': 0.7},
+      {'y': 0.6, 'length': 33.0, 'angle': -0.65},
+      {'y': 0.62, 'length': 33.0, 'angle': 0.65},
+      {'y': 0.7, 'length': 28.0, 'angle': -0.6},
+      {'y': 0.72, 'length': 28.0, 'angle': 0.6},
     ];
 
     for (var branch in branches) {
       final y = groundY - trunkHeight * (branch['y'] as double);
       final length = branch['length'] as double;
       final angle = branch['angle'] as double;
-      final startOffset = Offset(centerX, y);
+      final branchSway = windSway * (1.0 - (branch['y'] as double));
 
+      final startOffset = Offset(centerX + branchSway, y);
       _drawBranch(canvas, startOffset, length, angle, branchPaint);
 
-      // Add leaf clusters at the end of the branch
-      // CORRECTED CALCULATION HERE
+      final leafEnd = Offset(
+        startOffset.dx + length * math.sin(angle),
+        startOffset.dy - length * math.cos(angle),
+      );
+      _drawLeafCluster(canvas, leafEnd, 4, 10);
+    }
+  }
+
+  // Draw blooming tree
+  void _drawBlooming(Canvas canvas, Size size, double centerX, double groundY) {
+    _drawGround(canvas, size, groundY);
+
+    final trunkHeight = tree.height * 1.2;
+    final windSway = math.sin(animation.value * math.pi * 2) * 4;
+
+    _drawTrunkWithTexture(canvas, centerX, groundY, trunkHeight, 12, windSway);
+
+    final branchPaint = Paint()
+      ..color = const Color(0xFF7D5A3C)
+      ..strokeWidth = 6
+      ..strokeCap = StrokeCap.round;
+
+    final branches = [
+      {'y': 0.3, 'length': 50.0, 'angle': -0.7},
+      {'y': 0.32, 'length': 50.0, 'angle': 0.7},
+      {'y': 0.4, 'length': 55.0, 'angle': -0.65},
+      {'y': 0.42, 'length': 55.0, 'angle': 0.65},
+      {'y': 0.5, 'length': 60.0, 'angle': -0.6},
+      {'y': 0.52, 'length': 60.0, 'angle': 0.6},
+      {'y': 0.6, 'length': 50.0, 'angle': -0.55},
+      {'y': 0.62, 'length': 50.0, 'angle': 0.55},
+      {'y': 0.7, 'length': 45.0, 'angle': -0.5},
+      {'y': 0.72, 'length': 45.0, 'angle': 0.5},
+    ];
+
+    for (var branch in branches) {
+      final y = groundY - trunkHeight * (branch['y'] as double);
+      final length = branch['length'] as double;
+      final angle = branch['angle'] as double;
+      final branchSway = windSway * (1.0 - (branch['y'] as double));
+
+      final startOffset = Offset(centerX + branchSway, y);
+      _drawBranch(canvas, startOffset, length, angle, branchPaint);
+
       final leafEnd = Offset(
         startOffset.dx + length * math.sin(angle),
         startOffset.dy - length * math.cos(angle),
@@ -264,63 +295,42 @@ class TreePainter extends CustomPainter {
     }
   }
 
-  // Draw mature stage (full balanced tree)
+  // Draw mature tree
   void _drawMature(Canvas canvas, Size size, double centerX, double groundY) {
     _drawGround(canvas, size, groundY);
 
     final trunkHeight = tree.height;
-    final trunkPaint = Paint()
-      ..color = const Color(0xFF654321)
-      ..strokeWidth = 15
-      ..strokeCap = StrokeCap.round;
+    final windSway = math.sin(animation.value * math.pi * 2) * 5;
 
-    // Draw thick trunk
-    canvas.drawLine(
-      Offset(centerX, groundY),
-      Offset(centerX, groundY - trunkHeight),
-      trunkPaint,
-    );
+    _drawTrunkWithTexture(canvas, centerX, groundY, trunkHeight, 15, windSway);
 
-    // Draw extensive balanced branch system - BOTH SIDES
     final branchPaint = Paint()
       ..color = const Color(0xFF7D5A3C)
       ..strokeWidth = 8
       ..strokeCap = StrokeCap.round;
 
-    // Create perfectly balanced branches - alternating left/right
     final branches = [
-      {'y': 0.2, 'length': 70.0, 'angle': -0.8}, // LEFT
-      {'y': 0.22, 'length': 70.0, 'angle': 0.8}, // RIGHT
-      // {'y': 0.25, 'length': 75.0, 'angle': -0.75}, // LEFT
-      // {'y': 0.27, 'length': 75.0, 'angle': 0.75}, // RIGHT
-      {'y': 0.35, 'length': 80.0, 'angle': -0.7}, // LEFT
-      {'y': 0.37, 'length': 80.0, 'angle': 0.7}, // RIGHT
-      // {'y': 0.4, 'length': 85.0, 'angle': -0.65}, // LEFT
-      // {'y': 0.42, 'length': 85.0, 'angle': 0.65}, // RIGHT
-      {'y': 0.5, 'length': 85.0, 'angle': -0.6}, // LEFT
-      {'y': 0.52, 'length': 85.0, 'angle': 0.6}, // RIGHT
-      // {'y': 0.55, 'length': 80.0, 'angle': -0.55}, // LEFT
-      // {'y': 0.57, 'length': 80.0, 'angle': 0.55}, // RIGHT
-      {'y': 0.65, 'length': 75.0, 'angle': -0.5}, // LEFT
-      {'y': 0.67, 'length': 75.0, 'angle': 0.5}, // RIGHT
-      // {'y': 0.7, 'length': 70.0, 'angle': -0.45}, // LEFT
-      // {'y': 0.72, 'length': 70.0, 'angle': 0.45}, // RIGHT
-      {'y': 0.8, 'length': 60.0, 'angle': -0.4}, // LEFT
-      {'y': 0.82, 'length': 60.0, 'angle': 0.4}, // RIGHT
-      // {'y': 0.85, 'length': 55.0, 'angle': -0.35}, // LEFT
-      // {'y': 0.87, 'length': 55.0, 'angle': 0.35}, // RIGHT
+      {'y': 0.2, 'length': 70.0, 'angle': -0.9},
+      {'y': 0.22, 'length': 70.0, 'angle': 0.9},
+      {'y': 0.35, 'length': 80.0, 'angle': -0.7},
+      {'y': 0.37, 'length': 80.0, 'angle': 0.7},
+      {'y': 0.5, 'length': 85.0, 'angle': -0.6},
+      {'y': 0.52, 'length': 85.0, 'angle': 0.6},
+      {'y': 0.65, 'length': 75.0, 'angle': -0.5},
+      {'y': 0.67, 'length': 75.0, 'angle': 0.5},
+      {'y': 0.8, 'length': 60.0, 'angle': -0.4},
+      {'y': 0.82, 'length': 60.0, 'angle': 0.4},
     ];
 
     for (var branch in branches) {
       final y = groundY - trunkHeight * (branch['y'] as double);
       final length = branch['length'] as double;
       final angle = branch['angle'] as double;
-      final startOffset = Offset(centerX, y);
+      final branchSway = windSway * (1.0 - (branch['y'] as double));
 
+      final startOffset = Offset(centerX + branchSway, y);
       _drawBranch(canvas, startOffset, length, angle, branchPaint);
 
-      // Add leaf clusters at the end of the branch
-      // CORRECTED CALCULATION HERE
       final leafEnd = Offset(
         startOffset.dx + length * math.sin(angle),
         startOffset.dy - length * math.cos(angle),
@@ -329,7 +339,45 @@ class TreePainter extends CustomPainter {
     }
   }
 
-  // Helper: Draw ground
+  // Draw trunk with bark texture
+  void _drawTrunkWithTexture(
+    Canvas canvas,
+    double centerX,
+    double groundY,
+    double height,
+    double width,
+    double sway,
+  ) {
+    final trunkPaint = Paint()
+      ..color = const Color(0xFF654321)
+      ..strokeWidth = width
+      ..strokeCap = StrokeCap.round;
+
+    // Main trunk with sway
+    canvas.drawLine(
+      Offset(centerX, groundY),
+      Offset(centerX + sway, groundY - height),
+      trunkPaint,
+    );
+
+    // Bark texture lines
+    final texturePaint = Paint()
+      ..color = const Color(0xFF4A3018)
+      ..strokeWidth = width * 0.15
+      ..strokeCap = StrokeCap.round;
+
+    for (double i = 0.1; i < 1.0; i += 0.15) {
+      final y = groundY - height * i;
+      final xOffset = math.sin(i * 10) * width * 0.3;
+      canvas.drawLine(
+        Offset(centerX - width / 3 + xOffset, y),
+        Offset(centerX + width / 3 + xOffset, y),
+        texturePaint,
+      );
+    }
+  }
+
+  // Draw ground with grass
   void _drawGround(Canvas canvas, Size size, double groundY) {
     final groundPaint = Paint()
       ..color = const Color(0xFF8B7355)
@@ -340,21 +388,23 @@ class TreePainter extends CustomPainter {
       groundPaint,
     );
 
-    // Draw grass
+    // Animated grass
     final grassPaint = Paint()
       ..color = const Color(0xFF6B9B78)
-      ..strokeWidth = 2;
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round;
 
-    for (int i = 0; i < size.width; i += 20) {
+    for (int i = 0; i < size.width; i += 15) {
+      final sway = math.sin(animation.value * math.pi * 2 + i * 0.1) * 2;
       canvas.drawLine(
         Offset(i.toDouble(), groundY),
-        Offset(i.toDouble() + 5, groundY - 10),
+        Offset(i.toDouble() + 3 + sway, groundY - 12),
         grassPaint,
       );
     }
   }
 
-  // Helper: Draw a branch
+  // Draw branch
   void _drawBranch(
     Canvas canvas,
     Offset start,
@@ -362,16 +412,14 @@ class TreePainter extends CustomPainter {
     double angle,
     Paint paint,
   ) {
-    // The corrected logic is here!
     final end = Offset(
-      start.dx +
-          length * math.sin(angle), // Use sin for horizontal (left/right)
-      start.dy - length * math.cos(angle), // Use cos for vertical (up/down)
+      start.dx + length * math.sin(angle),
+      start.dy - length * math.cos(angle),
     );
     canvas.drawLine(start, end, paint);
   }
 
-  // Helper: Draw leaf
+  // Draw leaf
   void _drawLeaf(
     Canvas canvas,
     Offset center,
@@ -394,7 +442,7 @@ class TreePainter extends CustomPainter {
     canvas.restore();
   }
 
-  // Helper: Draw leaf cluster
+  // Draw leaf cluster with animation
   void _drawLeafCluster(Canvas canvas, Offset center, int count, double size) {
     final leafPaint = Paint()
       ..color = Color.lerp(
@@ -405,17 +453,23 @@ class TreePainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     for (int i = 0; i < count; i++) {
-      final angle = (i / count) * math.pi * 2;
+      final angle = (i / count) * math.pi * 2 + animation.value * 0.5;
+      final rustleOffset = math.sin(animation.value * math.pi * 2 + i) * 2;
       final offset = Offset(
-        center.dx + math.cos(angle) * size * 0.7,
-        center.dy + math.sin(angle) * size * 0.7,
+        center.dx + math.cos(angle) * (size * 0.7 + rustleOffset),
+        center.dy + math.sin(angle) * (size * 0.7 + rustleOffset),
       );
       _drawLeaf(canvas, offset, size, leafPaint, angle);
     }
   }
 
-  // Draw memories as decorations with better distribution
-  void _drawMemories(Canvas canvas, Size size, double centerX, double groundY) {
+  // Advanced memory drawing with realistic positioning
+  void _drawMemoriesAdvanced(
+    Canvas canvas,
+    Size size,
+    double centerX,
+    double groundY,
+  ) {
     if (memories.isEmpty) return;
 
     final trunkHeight =
@@ -424,83 +478,350 @@ class TreePainter extends CustomPainter {
             ? 2
             : tree.stage == TreeStage.growing
             ? 1.5
-            : 1.2);
+            : tree.stage == TreeStage.blooming
+            ? 1.2
+            : 1.0);
 
-    // Better memory distribution - spiral pattern
-    for (int i = 0; i < memories.length; i++) {
-      final memory = memories[i];
+    // Group memories by emotion
+    final birdMemories = memories
+        .where((m) => m.emotion == MemoryEmotion.excited)
+        .toList();
+    final starMemories = memories
+        .where((m) => m.emotion == MemoryEmotion.grateful)
+        .toList();
+    final rainMemories = memories
+        .where((m) => m.emotion == MemoryEmotion.sad)
+        .toList();
+    final fruitMemories = memories
+        .where((m) => m.emotion == MemoryEmotion.joyful)
+        .toList();
+    final otherMemories = memories
+        .where(
+          (m) =>
+              m.emotion != MemoryEmotion.excited &&
+              m.emotion != MemoryEmotion.grateful &&
+              m.emotion != MemoryEmotion.sad &&
+              m.emotion != MemoryEmotion.joyful,
+        )
+        .toList();
 
-      // Spiral distribution for better spread
-      final spiralTurns = (i / memories.length) * 3; // 3 full spirals
-      final angle = spiralTurns * math.pi * 2;
-      final radiusProgress = (i / memories.length); // 0 to 1
+    // Draw birds flying in the sky
+    for (int i = 0; i < birdMemories.length; i++) {
+      _drawFlyingBird(canvas, size, i, birdMemories.length);
+    }
 
-      // Position based on tree stage
-      double maxRadius;
-      double yOffset;
+    // Draw stars twinkling in the sky
+    for (int i = 0; i < starMemories.length; i++) {
+      _drawTwinklingStar(canvas, size, i, starMemories.length);
+    }
 
-      switch (tree.stage) {
-        case TreeStage.seedling:
-          maxRadius = 20;
-          yOffset = trunkHeight * 0.5;
-          break;
-        case TreeStage.growing:
-          maxRadius = 40;
-          yOffset = trunkHeight * 0.6;
-          break;
-        case TreeStage.blooming:
-          maxRadius = 70;
-          yOffset = trunkHeight * 0.7;
-          break;
-        case TreeStage.mature:
-          maxRadius = 100;
-          yOffset = trunkHeight * 0.6;
-          break;
-        case TreeStage.notPlanted:
-          continue;
-      }
+    // Draw raindrops falling from top
+    for (int i = 0; i < rainMemories.length; i++) {
+      _drawFallingRain(canvas, size, i, rainMemories.length);
+    }
 
-      // Spiral from center outward
-      final radius = 10 + (radiusProgress * maxRadius);
-      final x = centerX + math.cos(angle) * radius;
+    // Draw fruits hanging on branches
+    for (int i = 0; i < fruitMemories.length; i++) {
+      _drawHangingFruit(
+        canvas,
+        size,
+        centerX,
+        groundY,
+        trunkHeight,
+        i,
+        fruitMemories.length,
+      );
+    }
 
-      // Add vertical variation for more natural look
-      final verticalVariation = math.sin(angle * 2) * 15;
-      final y =
-          groundY -
-          yOffset +
-          math.sin(angle) * radius * 0.3 +
-          verticalVariation;
-
-      // Draw memory icon based on emotion
-      _drawMemoryIcon(canvas, Offset(x, y), memory.emotion, size, groundY);
+    // Draw other memories on tree (flowers, hearts, butterflies, leaves)
+    for (int i = 0; i < otherMemories.length; i++) {
+      _drawTreeMemory(
+        canvas,
+        size,
+        centerX,
+        groundY,
+        trunkHeight,
+        otherMemories[i],
+        i,
+        otherMemories.length,
+      );
     }
   }
 
-  // Draw memory icon with special positioning for eagles and raindrops
-  void _drawMemoryIcon(
-    Canvas canvas,
-    Offset position,
-    MemoryEmotion emotion,
-    Size size,
-    double groundY,
-  ) {
+  // Draw flying bird across the sky
+  void _drawFlyingBird(Canvas canvas, Size size, int index, int total) {
+    final birdSpeed = 0.15 + (index * 0.05);
+    final flightPath = (animation.value * birdSpeed) % 1.2 - 0.1;
+    final x = size.width * flightPath;
+    final y =
+        60.0 +
+        index * 40 +
+        math.sin(animation.value * math.pi * 4 + index) * 15;
+
     final iconSize = 20.0;
     final paint = Paint()..style = PaintingStyle.fill;
 
-    // Special positioning for eagles (fly below tree) and raindrops (float above)
-    Offset finalPosition = position;
+    canvas.save();
+    canvas.translate(x, y);
 
-    if (emotion == MemoryEmotion.excited) {
-      // Eagles fly below the tree
-      finalPosition = Offset(position.dx, groundY - 30);
-    } else if (emotion == MemoryEmotion.sad) {
-      // Raindrops float above the tree
-      finalPosition = Offset(position.dx, position.dy - 80);
-    }
+    // Wing flapping animation
+    final wingFlap = math.sin(animation.value * math.pi * 8) * 0.3;
+    final scale = 1.0 + wingFlap * 0.2;
+    canvas.scale(scale, 1.0);
+
+    // Bird silhouette (orange/golden bird)
+    paint.color = const Color(0xFFFF8C00);
+
+    // Body
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset.zero,
+        width: iconSize * 0.6,
+        height: iconSize * 0.4,
+      ),
+      paint,
+    );
+
+    // Head
+    canvas.drawCircle(Offset(iconSize * 0.35, 0), iconSize * 0.25, paint);
+
+    // Beak
+    paint.color = const Color(0xFFFFD700);
+    final beakPath = Path()
+      ..moveTo(iconSize * 0.5, -2)
+      ..lineTo(iconSize * 0.65, 0)
+      ..lineTo(iconSize * 0.5, 2)
+      ..close();
+    canvas.drawPath(beakPath, paint);
+
+    // Wings with flapping
+    paint.color = const Color(0xFFFF8C00);
+    final wingAngle = -0.8 + wingFlap;
+
+    // Left wing
+    canvas.save();
+    canvas.rotate(wingAngle);
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(-iconSize * 0.4, 0),
+        width: iconSize * 0.6,
+        height: iconSize * 0.3,
+      ),
+      paint,
+    );
+    canvas.restore();
+
+    // Right wing
+    canvas.save();
+    canvas.rotate(-wingAngle);
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(-iconSize * 0.4, 0),
+        width: iconSize * 0.6,
+        height: iconSize * 0.3,
+      ),
+      paint,
+    );
+    canvas.restore();
+
+    canvas.restore();
+  }
+
+  // Draw twinkling star in sky
+  void _drawTwinklingStar(Canvas canvas, Size size, int index, int total) {
+    final x = (size.width / (total + 1)) * (index + 1);
+    final y = 40.0 + (index % 3) * 30;
+
+    final iconSize = 12.0;
+    final twinkle =
+        (math.sin(animation.value * math.pi * 4 + index * 2) + 1) / 2;
+    final scale = 0.7 + twinkle * 0.6;
 
     canvas.save();
-    canvas.translate(finalPosition.dx, finalPosition.dy);
+    canvas.translate(x, y);
+    canvas.scale(scale);
+
+    final paint = Paint()
+      ..color = const Color(0xFFFFD700).withOpacity(0.8 + twinkle * 0.2)
+      ..style = PaintingStyle.fill;
+
+    // Star shape
+    final starPath = Path();
+    for (int i = 0; i < 5; i++) {
+      final angle = (i * math.pi * 2 / 5) - math.pi / 2;
+      final outerRadius = iconSize * 0.5;
+      final innerRadius = iconSize * 0.2;
+
+      final outerX = math.cos(angle) * outerRadius;
+      final outerY = math.sin(angle) * outerRadius;
+
+      if (i == 0) {
+        starPath.moveTo(outerX, outerY);
+      } else {
+        starPath.lineTo(outerX, outerY);
+      }
+
+      final innerAngle = angle + (math.pi / 5);
+      final innerX = math.cos(innerAngle) * innerRadius;
+      final innerY = math.sin(innerAngle) * innerRadius;
+      starPath.lineTo(innerX, innerY);
+    }
+    starPath.close();
+    canvas.drawPath(starPath, paint);
+
+    // Star glow
+    paint
+      ..color = const Color(0xFFFFD700).withOpacity(0.3 * twinkle)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
+    canvas.drawPath(starPath, paint);
+
+    canvas.restore();
+  }
+
+  // Draw falling raindrop from top
+  void _drawFallingRain(Canvas canvas, Size size, int index, int total) {
+    final x = (size.width / (total + 1)) * (index + 1);
+    final fallSpeed = 0.3 + (index * 0.1);
+    final fallProgress = (animation.value * fallSpeed) % 1.0;
+    final y = size.height * 0.15 + (size.height * 0.3 * fallProgress);
+
+    final iconSize = 6.0;
+    final paint = Paint()..style = PaintingStyle.fill;
+
+    canvas.save();
+    canvas.translate(x, y);
+
+    // Raindrop shape
+    paint.color = const Color(0xFF4682B4).withOpacity(0.7);
+    final dropPath = Path()
+      ..moveTo(0, -iconSize)
+      ..quadraticBezierTo(
+        iconSize * 0.5,
+        -iconSize * 0.3,
+        iconSize * 0.3,
+        iconSize * 0.3,
+      )
+      ..quadraticBezierTo(0, iconSize * 0.6, 0, iconSize * 0.7)
+      ..quadraticBezierTo(0, iconSize * 0.6, -iconSize * 0.3, iconSize * 0.3)
+      ..quadraticBezierTo(-iconSize * 0.5, -iconSize * 0.3, 0, -iconSize);
+    canvas.drawPath(dropPath, paint);
+
+    // Shine
+    paint.color = Colors.white.withOpacity(0.6);
+    canvas.drawCircle(
+      Offset(-iconSize * 0.15, -iconSize * 0.3),
+      iconSize * 0.15,
+      paint,
+    );
+
+    canvas.restore();
+  }
+
+  // Draw hanging fruit on tree branches
+  void _drawHangingFruit(
+    Canvas canvas,
+    Size size,
+    double centerX,
+    double groundY,
+    double trunkHeight,
+    int index,
+    int total,
+  ) {
+    final angle = (index / total) * math.pi * 2;
+    final radius = 60.0 + (index % 3) * 20;
+    final x = centerX + math.cos(angle) * radius;
+    final y = groundY - trunkHeight * 0.6 + math.sin(angle) * 30;
+
+    final iconSize = 15.0;
+    final swing = math.sin(animation.value * math.pi * 2 + index) * 3;
+
+    canvas.save();
+    canvas.translate(x + swing, y);
+
+    // Stem
+    final stemPaint = Paint()
+      ..color = const Color(0xFF654321)
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(
+      Offset(0, -iconSize * 0.5),
+      Offset(0, -iconSize * 0.8),
+      stemPaint,
+    );
+
+    // Apple/fruit
+    final fruitPaint = Paint()
+      ..color = const Color(0xFFFF6347)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(Offset.zero, iconSize * 0.45, fruitPaint);
+
+    // Shine
+    fruitPaint.color = Colors.white.withOpacity(0.4);
+    canvas.drawCircle(
+      Offset(-iconSize * 0.15, -iconSize * 0.15),
+      iconSize * 0.15,
+      fruitPaint,
+    );
+
+    // Leaf on top
+    final leafPaint = Paint()
+      ..color = const Color(0xFF228B22)
+      ..style = PaintingStyle.fill;
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(iconSize * 0.1, -iconSize * 0.6),
+        width: iconSize * 0.3,
+        height: iconSize * 0.2,
+      ),
+      leafPaint,
+    );
+
+    canvas.restore();
+  }
+
+  // Draw other memories on tree (flowers, hearts, butterflies, leaves)
+  void _drawTreeMemory(
+    Canvas canvas,
+    Size size,
+    double centerX,
+    double groundY,
+    double trunkHeight,
+    Memory memory,
+    int index,
+    int total,
+  ) {
+    final spiralTurns = (index / total) * 2.5;
+    final angle = spiralTurns * math.pi * 2;
+    final radiusProgress = (index / total);
+
+    double maxRadius = 80.0;
+    double yOffset = trunkHeight * 0.6;
+
+    if (tree.stage == TreeStage.seedling) {
+      maxRadius = 25.0;
+      yOffset = trunkHeight * 0.5;
+    } else if (tree.stage == TreeStage.growing) {
+      maxRadius = 50.0;
+      yOffset = trunkHeight * 0.6;
+    } else if (tree.stage == TreeStage.blooming) {
+      maxRadius = 80.0;
+      yOffset = trunkHeight * 0.7;
+    }
+
+    final radius = 15 + (radiusProgress * maxRadius);
+    final x = centerX + math.cos(angle) * radius;
+    final y = groundY - yOffset + math.sin(angle) * radius * 0.3;
+
+    _drawMemoryIcon(canvas, Offset(x, y), memory.emotion);
+  }
+
+  // Draw memory icon
+  void _drawMemoryIcon(Canvas canvas, Offset position, MemoryEmotion emotion) {
+    final iconSize = 15.0;
+    final paint = Paint()..style = PaintingStyle.fill;
+
+    canvas.save();
+    canvas.translate(position.dx, position.dy);
 
     // Pulsing animation
     final scale = 1.0 + (math.sin(animation.value * math.pi * 2) * 0.1);
@@ -508,302 +829,232 @@ class TreePainter extends CustomPainter {
 
     switch (emotion) {
       case MemoryEmotion.happy:
-        // Draw flower 🌸
+        // Blooming flower
         paint.color = const Color(0xFFFFB6C1);
-        for (int i = 0; i < 5; i++) {
+        final petalRotation = animation.value * 0.2;
+
+        for (int i = 0; i < 6; i++) {
           canvas.save();
-          canvas.rotate((i * math.pi * 2 / 5));
-          canvas.drawCircle(Offset(0, -iconSize * 0.4), iconSize * 0.3, paint);
+          canvas.rotate((i * math.pi * 2 / 6) + petalRotation);
+
+          // Petal
+          final petalPath = Path()
+            ..moveTo(0, 0)
+            ..quadraticBezierTo(
+              iconSize * 0.15,
+              -iconSize * 0.3,
+              0,
+              -iconSize * 0.5,
+            )
+            ..quadraticBezierTo(-iconSize * 0.15, -iconSize * 0.3, 0, 0);
+          canvas.drawPath(petalPath, paint);
           canvas.restore();
         }
+
+        // Center
         paint.color = const Color(0xFFFFD700);
         canvas.drawCircle(Offset.zero, iconSize * 0.2, paint);
-        break;
 
-      case MemoryEmotion.excited:
-        // Draw flying eagle - yellow/golden color mix
-
-        // Body (golden brown)
-        paint.color = const Color(0xFFDAA520); // Golden rod
-        canvas.drawOval(
-          Rect.fromCenter(
-            center: Offset.zero,
-            width: iconSize * 0.5,
-            height: iconSize * 0.8,
-          ),
-          paint,
-        );
-
-        // Head (lighter golden)
-        paint.color = const Color(0xFFFFA500); // Orange gold
-        canvas.drawCircle(Offset(0, -iconSize * 0.45), iconSize * 0.3, paint);
-
-        // Sharp beak (dark yellow)
-        paint.color = const Color(0xFFFFD700); // Gold
-        final beakPath = Path()
-          ..moveTo(iconSize * 0.15, -iconSize * 0.45)
-          ..lineTo(iconSize * 0.45, -iconSize * 0.4)
-          ..lineTo(iconSize * 0.15, -iconSize * 0.35)
-          ..close();
-        canvas.drawPath(beakPath, paint);
-
-        // Large spread wings (golden brown with details)
-        paint.color = const Color(0xFFB8860B); // Dark golden rod
-        paint.style = PaintingStyle.fill;
-
-        // Left wing - large and majestic
-        final leftWing = Path()
-          ..moveTo(-iconSize * 0.2, 0)
-          ..quadraticBezierTo(
-            -iconSize * 0.5,
-            -iconSize * 0.4,
-            -iconSize * 0.9,
-            -iconSize * 0.2,
-          )
-          ..quadraticBezierTo(
-            -iconSize * 0.6,
-            -iconSize * 0.05,
-            -iconSize * 0.2,
-            0.1,
+        // Pollen dots
+        paint.color = const Color(0xFFFFB700);
+        for (int i = 0; i < 8; i++) {
+          final angle = (i / 8) * math.pi * 2;
+          canvas.drawCircle(
+            Offset(
+              math.cos(angle) * iconSize * 0.12,
+              math.sin(angle) * iconSize * 0.12,
+            ),
+            iconSize * 0.03,
+            paint,
           );
-        canvas.drawPath(leftWing, paint);
-
-        // Right wing - large and majestic
-        final rightWing = Path()
-          ..moveTo(iconSize * 0.2, 0)
-          ..quadraticBezierTo(
-            iconSize * 0.5,
-            -iconSize * 0.4,
-            iconSize * 0.9,
-            -iconSize * 0.2,
-          )
-          ..quadraticBezierTo(
-            iconSize * 0.6,
-            -iconSize * 0.05,
-            iconSize * 0.2,
-            0.1,
-          );
-        canvas.drawPath(rightWing, paint);
-
-        // Wing feather details
-        paint.color = const Color(0xFFDAA520);
-        paint.style = PaintingStyle.stroke;
-        paint.strokeWidth = 1.5;
-
-        // Left wing feathers
-        canvas.drawLine(
-          Offset(-iconSize * 0.3, -iconSize * 0.05),
-          Offset(-iconSize * 0.7, -iconSize * 0.25),
-          paint,
-        );
-        canvas.drawLine(
-          Offset(-iconSize * 0.4, -iconSize * 0.1),
-          Offset(-iconSize * 0.8, -iconSize * 0.2),
-          paint,
-        );
-
-        // Right wing feathers
-        canvas.drawLine(
-          Offset(iconSize * 0.3, -iconSize * 0.05),
-          Offset(iconSize * 0.7, -iconSize * 0.25),
-          paint,
-        );
-        canvas.drawLine(
-          Offset(iconSize * 0.4, -iconSize * 0.1),
-          Offset(iconSize * 0.8, -iconSize * 0.2),
-          paint,
-        );
-
-        // Tail feathers
-        paint.style = PaintingStyle.fill;
-        paint.color = const Color(0xFFB8860B);
-        final tailPath = Path()
-          ..moveTo(-iconSize * 0.15, iconSize * 0.4)
-          ..lineTo(0, iconSize * 0.6)
-          ..lineTo(iconSize * 0.15, iconSize * 0.4)
-          ..close();
-        canvas.drawPath(tailPath, paint);
-
-        paint.style = PaintingStyle.fill;
-        break;
-
-      case MemoryEmotion.joyful:
-        // Draw fruit 🍎
-        paint.color = const Color(0xFFFF6347);
-        canvas.drawCircle(Offset.zero, iconSize * 0.4, paint);
-        paint.color = const Color(0xFF228B22);
-        canvas.drawOval(
-          Rect.fromCenter(
-            center: Offset(0, -iconSize * 0.5),
-            width: iconSize * 0.3,
-            height: iconSize * 0.2,
-          ),
-          paint,
-        );
-        break;
-
-      case MemoryEmotion.grateful:
-        // Draw star ⭐
-        paint.color = const Color(0xFFFFD700);
-        final starPath = Path();
-        for (int i = 0; i < 5; i++) {
-          final angle = (i * math.pi * 2 / 5) - math.pi / 2;
-          final outerRadius = iconSize * 0.5;
-          final innerRadius = iconSize * 0.2;
-
-          final outerX = math.cos(angle) * outerRadius;
-          final outerY = math.sin(angle) * outerRadius;
-
-          if (i == 0) {
-            starPath.moveTo(outerX, outerY);
-          } else {
-            starPath.lineTo(outerX, outerY);
-          }
-
-          final innerAngle = angle + (math.pi / 5);
-          final innerX = math.cos(innerAngle) * innerRadius;
-          final innerY = math.sin(innerAngle) * innerRadius;
-          starPath.lineTo(innerX, innerY);
         }
-        starPath.close();
-        canvas.drawPath(starPath, paint);
         break;
 
       case MemoryEmotion.love:
-        // Draw heart ❤️
+        // Beating heart
+        final heartBeat = 1.0 + math.sin(animation.value * math.pi * 4) * 0.15;
+        canvas.scale(heartBeat);
+
         paint.color = const Color(0xFFFF1493);
-        final heartPath = Path();
-        heartPath.moveTo(0, iconSize * 0.3);
-        heartPath.cubicTo(
-          -iconSize * 0.5,
-          -iconSize * 0.1,
-          -iconSize * 0.5,
-          -iconSize * 0.5,
-          0,
-          -iconSize * 0.2,
-        );
-        heartPath.cubicTo(
-          iconSize * 0.5,
-          -iconSize * 0.5,
-          iconSize * 0.5,
-          -iconSize * 0.1,
-          0,
-          iconSize * 0.3,
-        );
+        final heartPath = Path()
+          ..moveTo(0, iconSize * 0.3)
+          ..cubicTo(
+            -iconSize * 0.5,
+            -iconSize * 0.1,
+            -iconSize * 0.5,
+            -iconSize * 0.5,
+            0,
+            -iconSize * 0.2,
+          )
+          ..cubicTo(
+            iconSize * 0.5,
+            -iconSize * 0.5,
+            iconSize * 0.5,
+            -iconSize * 0.1,
+            0,
+            iconSize * 0.3,
+          );
         canvas.drawPath(heartPath, paint);
-        break;
 
-      case MemoryEmotion.sad:
-        // Draw floating raindrop 💧 (with gentle sway)
-        final sway = math.sin(animation.value * math.pi * 2) * 3;
-        canvas.translate(sway, 0);
-
-        paint.color = const Color(0xFF4682B4);
-        final dropPath = Path();
-        dropPath.moveTo(0, -iconSize * 0.5);
-        dropPath.quadraticBezierTo(
-          iconSize * 0.35,
-          -iconSize * 0.1,
-          iconSize * 0.2,
-          iconSize * 0.3,
-        );
-        dropPath.quadraticBezierTo(
-          iconSize * 0.1,
-          iconSize * 0.5,
-          0,
-          iconSize * 0.5,
-        );
-        dropPath.quadraticBezierTo(
-          -iconSize * 0.1,
-          iconSize * 0.5,
-          -iconSize * 0.2,
-          iconSize * 0.3,
-        );
-        dropPath.quadraticBezierTo(
-          -iconSize * 0.35,
-          -iconSize * 0.1,
-          0,
-          -iconSize * 0.5,
-        );
-        canvas.drawPath(dropPath, paint);
-
-        // Add shine effect
-        paint.color = Colors.white.withOpacity(0.5);
-        canvas.drawCircle(
-          Offset(-iconSize * 0.1, -iconSize * 0.2),
-          iconSize * 0.1,
-          paint,
-        );
+        // Sparkles around heart
+        paint.color = const Color(0xFFFFFFFF).withOpacity(0.8);
+        final sparkleAngle = animation.value * math.pi * 4;
+        for (int i = 0; i < 4; i++) {
+          final angle = (i * math.pi / 2) + sparkleAngle;
+          final sparkleOffset = Offset(
+            math.cos(angle) * iconSize * 0.8,
+            math.sin(angle) * iconSize * 0.8,
+          );
+          canvas.drawCircle(sparkleOffset, iconSize * 0.08, paint);
+        }
         break;
 
       case MemoryEmotion.nostalgic:
-        // Draw butterfly 🦋
+        // Fluttering butterfly
+        final flutter = math.sin(animation.value * math.pi * 6) * 0.3;
+
         paint.color = const Color(0xFFBA55D3);
+
         // Left wing
+        canvas.save();
+        canvas.rotate(flutter);
         canvas.drawOval(
           Rect.fromCenter(
-            center: Offset(-iconSize * 0.25, 0),
-            width: iconSize * 0.4,
-            height: iconSize * 0.6,
+            center: Offset(-iconSize * 0.3, -iconSize * 0.1),
+            width: iconSize * 0.5,
+            height: iconSize * 0.7,
           ),
           paint,
         );
+        canvas.restore();
+
         // Right wing
+        canvas.save();
+        canvas.rotate(-flutter);
         canvas.drawOval(
           Rect.fromCenter(
-            center: Offset(iconSize * 0.25, 0),
-            width: iconSize * 0.4,
-            height: iconSize * 0.6,
+            center: Offset(iconSize * 0.3, -iconSize * 0.1),
+            width: iconSize * 0.5,
+            height: iconSize * 0.7,
           ),
           paint,
         );
+        canvas.restore();
+
+        // Wing patterns
+        paint.color = const Color(0xFFFFFFFF).withOpacity(0.4);
+        canvas.drawCircle(
+          Offset(-iconSize * 0.25, -iconSize * 0.15),
+          iconSize * 0.12,
+          paint,
+        );
+        canvas.drawCircle(
+          Offset(iconSize * 0.25, -iconSize * 0.15),
+          iconSize * 0.12,
+          paint,
+        );
+
         // Body
         paint.color = const Color(0xFF000000);
         canvas.drawOval(
           Rect.fromCenter(
-            center: Offset.zero,
+            center: Offset(0, 0),
             width: iconSize * 0.15,
-            height: iconSize * 0.5,
+            height: iconSize * 0.6,
           ),
           paint,
         );
+
+        // Antennae
+        paint.style = PaintingStyle.stroke;
+        paint.strokeWidth = 1.5;
+        canvas.drawLine(
+          Offset(0, -iconSize * 0.3),
+          Offset(-iconSize * 0.15, -iconSize * 0.5),
+          paint,
+        );
+        canvas.drawLine(
+          Offset(0, -iconSize * 0.3),
+          Offset(iconSize * 0.15, -iconSize * 0.5),
+          paint,
+        );
+        paint.style = PaintingStyle.fill;
         break;
 
       case MemoryEmotion.peaceful:
-        // Draw leaf 🍃
-        paint.color = const Color(0xFF90EE90);
+        // Gently swaying leaf
+        final leafSway = math.sin(animation.value * math.pi * 2) * 0.2;
+        canvas.rotate(leafSway);
+
+        paint.color = const Color(0xFF4A7C59);
         final leafPath = Path()
-          ..moveTo(0, -iconSize * 0.4)
+          ..moveTo(0, -iconSize * 0.5)
           ..quadraticBezierTo(
             iconSize * 0.3,
-            -iconSize * 0.2,
-            iconSize * 0.2,
-            0,
-          )
-          ..quadraticBezierTo(iconSize * 0.3, iconSize * 0.2, 0, iconSize * 0.4)
-          ..quadraticBezierTo(
             -iconSize * 0.3,
-            iconSize * 0.2,
-            -iconSize * 0.2,
+            iconSize * 0.25,
             0,
           )
           ..quadraticBezierTo(
-            -iconSize * 0.3,
-            -iconSize * 0.2,
+            iconSize * 0.3,
+            iconSize * 0.3,
             0,
-            -iconSize * 0.4,
+            iconSize * 0.5,
+          )
+          ..quadraticBezierTo(
+            -iconSize * 0.3,
+            iconSize * 0.3,
+            -iconSize * 0.25,
+            0,
+          )
+          ..quadraticBezierTo(
+            -iconSize * 0.3,
+            -iconSize * 0.3,
+            0,
+            -iconSize * 0.5,
           );
         canvas.drawPath(leafPath, paint);
 
-        // Leaf vein
+        // Leaf veins
         paint.color = const Color(0xFF228B22);
-        paint.strokeWidth = 1;
         paint.style = PaintingStyle.stroke;
+        paint.strokeWidth = 1.5;
         canvas.drawLine(
-          Offset(0, -iconSize * 0.4),
-          Offset(0, iconSize * 0.4),
+          Offset(0, -iconSize * 0.5),
+          Offset(0, iconSize * 0.5),
           paint,
         );
+
+        // Side veins
+        for (double i = -0.3; i <= 0.3; i += 0.15) {
+          canvas.drawLine(
+            Offset(0, iconSize * i),
+            Offset(iconSize * 0.2, iconSize * (i + 0.1)),
+            paint,
+          );
+          canvas.drawLine(
+            Offset(0, iconSize * i),
+            Offset(-iconSize * 0.2, iconSize * (i + 0.1)),
+            paint,
+          );
+        }
+        paint.style = PaintingStyle.fill;
+        break;
+
+      case MemoryEmotion.excited:
+        // This case handled separately in flying birds
+        break;
+
+      case MemoryEmotion.joyful:
+        // This case handled separately in hanging fruits
+        break;
+
+      case MemoryEmotion.grateful:
+        // This case handled separately in twinkling stars
+        break;
+
+      case MemoryEmotion.sad:
+        // This case handled separately in falling rain
         break;
     }
 
