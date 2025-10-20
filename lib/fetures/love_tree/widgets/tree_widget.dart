@@ -70,7 +70,7 @@ class _TreeWidgetState extends State<TreeWidget>
               child: CustomPaint(
                 size: Size(
                   MediaQuery.of(context).size.width,
-                  MediaQuery.of(context).size.height * 0.6,
+                  MediaQuery.of(context).size.height * 0.4,
                 ),
                 painter: TreePainter(
                   tree: widget.tree,

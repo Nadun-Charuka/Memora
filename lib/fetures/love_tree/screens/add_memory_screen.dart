@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:memora/fetures/auth/provider/auth_provider.dart';
+import 'package:memora/fetures/love_tree/services/tree_service.dart';
 import 'package:memora/models/tree_model.dart';
-import '../services/tree_service.dart';
 
 class AddMemoryScreen extends ConsumerStatefulWidget {
   final String coupleId;
@@ -36,12 +36,7 @@ class _AddMemoryScreenState extends ConsumerState<AddMemoryScreen> {
     setState(() => _isLoading = true);
 
     final user = ref.read(authServiceProvider).currentUser;
-    if (user == null) {
-      // Handle case where user is not logged in
-      setState(() => _isLoading = false);
-      _showSnackBar('You are not logged in.', isError: true);
-      return;
-    }
+    if (user == null) return;
 
     final result = await TreeService().addMemory(
       coupleId: widget.coupleId,
@@ -54,17 +49,14 @@ class _AddMemoryScreenState extends ConsumerState<AddMemoryScreen> {
     if (!mounted) return;
 
     if (result['success']) {
-      _showSnackBar(result['message'] ?? 'Memory added!', isError: false);
+      _showSnackBar(result['message'], isError: false);
       await Future.delayed(const Duration(milliseconds: 500));
       if (mounted) {
         Navigator.pop(context);
       }
     } else {
       setState(() => _isLoading = false);
-      _showSnackBar(
-        result['message'] ?? 'Failed to add memory.',
-        isError: true,
-      );
+      _showSnackBar(result['message'], isError: true);
     }
   }
 
@@ -158,7 +150,7 @@ class _AddMemoryScreenState extends ConsumerState<AddMemoryScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFF6B9B78).withOpacity(0.1),
+                color: const Color(0xFF6B9B78).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -253,7 +245,10 @@ class _AddMemoryScreenState extends ConsumerState<AddMemoryScreen> {
                   emotion.displayName,
                   style: TextStyle(
                     color: isSelected ? Colors.white : Colors.black87,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                    fontSize: 14,
                   ),
                 ),
               ],
@@ -267,21 +262,21 @@ class _AddMemoryScreenState extends ConsumerState<AddMemoryScreen> {
   String _getEmotionDescription(MemoryEmotion emotion) {
     switch (emotion) {
       case MemoryEmotion.happy:
-        return 'A happy memory will make your tree bloom with flowers!';
+        return 'This memory will add a beautiful flower to your tree! +6 growth';
       case MemoryEmotion.excited:
-        return 'An exciting memory will attract birds to your tree!';
+        return 'A bird will perch on your tree! +6 growth';
       case MemoryEmotion.joyful:
-        return 'A joyful memory will help your tree grow sweet fruits!';
+        return 'Your tree will bear a delicious fruit! +7 growth';
       case MemoryEmotion.grateful:
-        return 'A grateful memory makes your tree shine bright like a star!';
+        return 'A shining star will light up your tree! +5 growth';
       case MemoryEmotion.love:
-        return 'A loving memory fills your tree with even more love!';
+        return 'A heart will bloom on your tree! +8 growth (Maximum!)';
       case MemoryEmotion.sad:
-        return 'Sharing a sad memory will water the roots, helping it grow stronger.';
+        return 'Even rain helps trees grow. Your tree will understand. +1 growth';
       case MemoryEmotion.nostalgic:
-        return 'A nostalgic memory brings beautiful butterflies to your tree.';
+        return 'A butterfly will visit your tree! +3 growth';
       case MemoryEmotion.peaceful:
-        return 'A peaceful memory gives your tree healthy, green leaves.';
+        return 'A gentle leaf will appear! +4 growth';
     }
   }
 }

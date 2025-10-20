@@ -18,8 +18,15 @@ class TreePainter extends CustomPainter {
     final centerX = size.width / 2;
     final groundY = size.height * 0.85;
 
+    // Scale everything 2x larger
+    canvas.save();
+    canvas.translate(centerX, groundY);
+    canvas.scale(1.5, 1.5);
+    canvas.translate(-centerX, -groundY);
+
     if (!tree.isPlanted) {
       _drawUnplantedState(canvas, size, centerX, groundY);
+      canvas.restore();
       return;
     }
 
@@ -46,6 +53,8 @@ class TreePainter extends CustomPainter {
     if (tree.isPlanted) {
       _drawMemories(canvas, size, centerX, groundY);
     }
+
+    canvas.restore();
   }
 
   // Draw unplanted state (just ground and marker)

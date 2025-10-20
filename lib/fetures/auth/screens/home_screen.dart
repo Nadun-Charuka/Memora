@@ -236,8 +236,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                   // Plant tree button or Add memory button
                   Positioned(
-                    bottom: 30,
-                    right: 20,
+                    bottom: 210,
+                    right: 10,
                     child: tree.isPlanted
                         ? _buildAddMemoryFAB()
                         : _buildPlantTreeButton(status),
