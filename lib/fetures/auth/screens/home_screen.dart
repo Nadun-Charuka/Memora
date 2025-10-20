@@ -236,7 +236,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                   // Plant tree button or Add memory button
                   Positioned(
-                    bottom: 210,
+                    bottom: 150,
                     right: 10,
                     child: tree.isPlanted
                         ? _buildAddMemoryFAB()
@@ -364,7 +364,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildAddMemoryFAB() {
-    return FloatingActionButton.extended(
+    return FloatingActionButton(
       onPressed: () {
         Navigator.of(context).push(
           MaterialPageRoute(
@@ -373,11 +373,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         );
       },
       backgroundColor: const Color(0xFF6B9B78),
-      icon: const Icon(Icons.add),
-      label: const Text(
-        'Add Memory',
-        style: TextStyle(fontWeight: FontWeight.bold),
-      ),
+      child: Icon(Icons.add),
     );
   }
 
