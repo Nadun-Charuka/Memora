@@ -93,8 +93,114 @@ class TreeService {
     }
   }
 
-  // Add a memory to the tree
+  // Add a memory to the tree (ONE PER USER PER DAY)
   Future<Map<String, dynamic>> addMemory({
+    required String coupleId,
+    required String userId,
+    required String userName,
+    required String content,
+    required MemoryEmotion emotion,
+    String? photoUrl,
+  }) async {
+    try {
+      final now = DateTime.now();
+      final monthKey = '${now.year}_${now.month.toString().padLeft(2, '0')}';
+      final treeRef = _firestore
+          .collection('couples')
+          .doc(coupleId)
+          .collection('trees')
+          .doc(monthKey);
+
+      // Check if tree exists and is planted
+      final treeDoc = await treeRef.get();
+      if (!treeDoc.exists) {
+        return {'success': false, 'message': 'Tree not found'};
+      }
+
+      final treeData = treeDoc.data()!;
+      if (!(treeData['isPlanted'] ?? false)) {
+        return {'success': false, 'message': 'Tree must be planted first!'};
+      }
+
+      // CHECK: One memo per user per day
+      final todayStart = DateTime(now.year, now.month, now.day);
+      final todayEnd = todayStart.add(const Duration(days: 1));
+
+      final todayMemories = await treeRef
+          .collection('memories')
+          .where('addedBy', isEqualTo: userId)
+          .where(
+            'createdAt',
+            isGreaterThanOrEqualTo: Timestamp.fromDate(todayStart),
+          )
+          .where('createdAt', isLessThan: Timestamp.fromDate(todayEnd))
+          .get();
+
+      if (todayMemories.docs.isNotEmpty) {
+        return {
+          'success': false,
+          'message':
+              'You\'ve already added a memory today! 💚\nCome back tomorrow to share more moments.',
+        };
+      }
+
+      // Create memory
+      final memory = Memory(
+        id: '',
+        content: content,
+        emotion: emotion,
+        photoUrl: photoUrl,
+        addedBy: userId,
+        addedByName: userName,
+        createdAt: DateTime.now(),
+      );
+
+      // Add memory to subcollection
+      await treeRef.collection('memories').add(memory.toFirestore());
+
+      // Update tree stats
+      final currentMemoryCount = treeData['memoryCount'] ?? 0;
+      final newMemoryCount = currentMemoryCount + 1;
+      final newStage = LoveTree.calculateStage(newMemoryCount, true);
+
+      // Calculate growth
+      final currentHeight = (treeData['height'] ?? 10.0).toDouble();
+      final growthAmount = _calculateGrowth(emotion);
+      final newHeight = (currentHeight + growthAmount).clamp(10.0, 200.0);
+
+      // Calculate happiness boost
+      final currentHappiness = (treeData['happiness'] ?? 1.0).toDouble();
+      final happinessBoost = _calculateHappinessBoost(emotion);
+      final newHappiness = (currentHappiness + happinessBoost).clamp(0.0, 1.0);
+
+      await treeRef.update({
+        'memoryCount': newMemoryCount,
+        'stage': newStage.name,
+        'height': newHeight,
+        'happiness': newHappiness,
+        'lovePoints': FieldValue.increment(_calculateLovePoints(emotion)),
+        'level': (newMemoryCount ~/ 5) + 1,
+        'lastInteraction': FieldValue.serverTimestamp(),
+      });
+
+      // Update couple stats
+      await _firestore.collection('couples').doc(coupleId).update({
+        'totalLovePoints': FieldValue.increment(_calculateLovePoints(emotion)),
+        'lastInteraction': FieldValue.serverTimestamp(),
+      });
+
+      return {
+        'success': true,
+        'message':
+            '${emotion.icon} Memory added! Tree grew ${growthAmount.toStringAsFixed(1)} units!',
+        'newStage': newStage.displayName,
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Error: ${e.toString()}'};
+    }
+  }
+
+  dMemory({
     required String coupleId,
     required String userId,
     required String userName,
@@ -240,7 +346,7 @@ class TreeService {
     }
   }
 
-  // Delete a memory
+  // Delete a memory (with tree stat updates)
   Future<Map<String, dynamic>> deleteMemory({
     required String coupleId,
     required String memoryId,
@@ -249,14 +355,13 @@ class TreeService {
     try {
       final now = DateTime.now();
       final monthKey = '${now.year}_${now.month.toString().padLeft(2, '0')}';
-
-      final memoryRef = _firestore
+      final treeRef = _firestore
           .collection('couples')
           .doc(coupleId)
           .collection('trees')
-          .doc(monthKey)
-          .collection('memories')
-          .doc(memoryId);
+          .doc(monthKey);
+
+      final memoryRef = treeRef.collection('memories').doc(memoryId);
 
       final memoryDoc = await memoryRef.get();
       if (!memoryDoc.exists) {
@@ -264,14 +369,53 @@ class TreeService {
       }
 
       // Check if user owns the memory
-      if (memoryDoc.data()!['addedBy'] != userId) {
+      final memoryData = memoryDoc.data()!;
+      if (memoryData['addedBy'] != userId) {
         return {
           'success': false,
           'message': 'You can only delete your own memories',
         };
       }
 
+      // Get emotion for calculating points to deduct
+      final emotionName = memoryData['emotion'];
+      final emotion = MemoryEmotion.values.firstWhere(
+        (e) => e.name == emotionName,
+        orElse: () => MemoryEmotion.happy,
+      );
+
+      // Delete memory
       await memoryRef.delete();
+
+      // Update tree stats (decrease counts)
+      final treeDoc = await treeRef.get();
+      if (treeDoc.exists) {
+        final treeData = treeDoc.data()!;
+        final currentMemoryCount = treeData['memoryCount'] ?? 0;
+        final newMemoryCount = (currentMemoryCount - 1).clamp(0, 1000);
+        final newStage = LoveTree.calculateStage(newMemoryCount, true);
+
+        final currentHeight = (treeData['height'] ?? 10.0).toDouble();
+        final growthAmount = _calculateGrowth(emotion);
+        final newHeight = (currentHeight - growthAmount).clamp(10.0, 200.0);
+
+        await treeRef.update({
+          'memoryCount': newMemoryCount,
+          'stage': newStage.name,
+          'height': newHeight,
+          'lovePoints': FieldValue.increment(-_calculateLovePoints(emotion)),
+          'level': (newMemoryCount ~/ 5) + 1,
+          'lastInteraction': FieldValue.serverTimestamp(),
+        });
+
+        // Update couple stats
+        await _firestore.collection('couples').doc(coupleId).update({
+          'totalLovePoints': FieldValue.increment(
+            -_calculateLovePoints(emotion),
+          ),
+          'lastInteraction': FieldValue.serverTimestamp(),
+        });
+      }
 
       return {'success': true, 'message': 'Memory deleted'};
     } catch (e) {

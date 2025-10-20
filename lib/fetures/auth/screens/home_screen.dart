@@ -4,6 +4,7 @@ import 'package:memora/fetures/auth/provider/auth_provider.dart';
 import 'package:memora/fetures/love_tree/screens/add_memory_screen.dart';
 import 'package:memora/fetures/love_tree/services/tree_service.dart';
 import 'package:memora/fetures/love_tree/widgets/tree_widget.dart';
+import 'package:memora/fetures/memo/screens/view_all_memo_screen.dart';
 import 'package:memora/fetures/village/service/village_service.dart';
 import 'package:memora/models/tree_model.dart';
 import 'login_screen.dart';
@@ -218,7 +219,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 Icons.more_vert,
                                 color: Colors.white,
                               ),
-                              onPressed: _showOptionsMenu,
+                              onPressed: () {
+                                _showOptionsMenu(tree);
+                              },
                             ),
                           ],
                         ),
@@ -423,7 +426,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  void _showOptionsMenu() {
+  void _showOptionsMenu(LoveTree tree) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -447,7 +450,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               title: const Text('View All Memories'),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Navigate to memories list
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        MemoryListScreen(coupleId: _coupleId!, tree: tree),
+                  ),
+                );
               },
             ),
             ListTile(
