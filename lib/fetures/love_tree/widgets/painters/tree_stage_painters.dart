@@ -1,5 +1,3 @@
-// FILE: lib/painters/tree_stage_painters.dart
-
 import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -29,7 +27,7 @@ class UnplantedPainter extends TreeStagePainter {
     groundPainter.paint(canvas, size, groundY);
 
     final glowPaint = Paint()
-      ..color = const Color(0xFF6B5345).withOpacity(0.3)
+      ..color = const Color(0xFF6B5345).withValues(alpha: 0.3)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
     canvas.drawCircle(Offset(centerX, groundY + 20), 40, glowPaint);
 
@@ -159,7 +157,7 @@ class SeedlingPainter extends TreeStagePainter {
     canvas.drawPath(path, leafPaint);
 
     final veinPaint = Paint()
-      ..color = const Color(0xFF558B2F).withOpacity(0.4)
+      ..color = const Color(0xFF558B2F).withValues(alpha: 0.4)
       ..strokeWidth = 1.2
       ..style = PaintingStyle.stroke;
     canvas.drawLine(Offset(0, -size * 0.4), Offset(0, size * 0.4), veinPaint);
@@ -242,7 +240,7 @@ class GrowingPainter extends TreeStagePainter {
 
     // Bark texture
     final barkPaint = Paint()
-      ..color = Colors.black.withOpacity(0.2)
+      ..color = Colors.black.withValues(alpha: 0.2)
       ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke;
 
@@ -425,7 +423,7 @@ class BloomingPainter extends TreeStagePainter {
 
     // Detailed bark texture
     final barkPaint = Paint()
-      ..color = Colors.black.withOpacity(0.25)
+      ..color = Colors.black.withValues(alpha: 0.25)
       ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke;
 
@@ -651,7 +649,7 @@ void _drawRealisticTrunk(
   canvas.drawPath(path, trunkPaint);
 
   final barkPaint = Paint()
-    ..color = Colors.black.withOpacity(0.15)
+    ..color = Colors.black.withValues(alpha: 0.15)
     ..strokeWidth = 1.5
     ..style = PaintingStyle.stroke;
 
@@ -755,7 +753,7 @@ void _drawDetailedLeaf(
   canvas.drawPath(path, paint);
 
   final veinPaint = Paint()
-    ..color = Colors.black.withOpacity(0.1)
+    ..color = Colors.black.withValues(alpha: 0.1)
     ..strokeWidth = 0.5
     ..style = PaintingStyle.stroke;
   canvas.drawLine(Offset(0, -size / 2), Offset(0, size / 2), veinPaint);

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:memora/fetures/love_tree/widgets/tree_painter.dart';
 import 'package:memora/models/tree_model.dart';
-import 'tree_painter.dart';
 
 class TreeWidget extends StatefulWidget {
   final LoveTree tree;
@@ -104,8 +104,8 @@ class _TreeWidgetState extends State<TreeWidget> with TickerProviderStateMixin {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Colors.white.withOpacity(0.95),
-              Colors.white.withOpacity(0.90),
+              Colors.white.withValues(alpha: 0.95),
+              Colors.white.withValues(alpha: 0.90),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -113,13 +113,13 @@ class _TreeWidgetState extends State<TreeWidget> with TickerProviderStateMixin {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 20,
               offset: const Offset(0, -5),
             ),
           ],
           border: Border.all(
-            color: Colors.white.withOpacity(0.5),
+            color: Colors.white.withValues(alpha: 0.5),
             width: 1.5,
           ),
         ),
@@ -128,7 +128,7 @@ class _TreeWidgetState extends State<TreeWidget> with TickerProviderStateMixin {
           children: [
             // Compact header - always visible
             Row(
-              mainAxisAlignment: MainAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Row(
                   children: [
@@ -207,7 +207,7 @@ class _TreeWidgetState extends State<TreeWidget> with TickerProviderStateMixin {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFF6B9B78).withOpacity(0.15),
+        color: const Color(0xFF6B9B78).withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -232,10 +232,10 @@ class _TreeWidgetState extends State<TreeWidget> with TickerProviderStateMixin {
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFF6B9B78).withOpacity(0.1),
+          color: const Color(0xFF6B9B78).withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: const Color(0xFF6B9B78).withOpacity(0.3),
+            color: const Color(0xFF6B9B78).withValues(alpha: 0.3),
             width: 1,
           ),
         ),
@@ -244,7 +244,7 @@ class _TreeWidgetState extends State<TreeWidget> with TickerProviderStateMixin {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFF6B9B78).withOpacity(0.2),
+                color: const Color(0xFF6B9B78).withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -323,7 +323,9 @@ class _TreeWidgetState extends State<TreeWidget> with TickerProviderStateMixin {
                             borderRadius: BorderRadius.circular(10),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF6B9B78).withOpacity(0.3),
+                                color: const Color(
+                                  0xFF6B9B78,
+                                ).withValues(alpha: 0.3),
                                 blurRadius: 4,
                                 offset: const Offset(0, 2),
                               ),
@@ -377,10 +379,10 @@ class _TreeWidgetState extends State<TreeWidget> with TickerProviderStateMixin {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: _getStatColor(label).withOpacity(0.1),
+            color: _getStatColor(label).withValues(alpha: 0.1),
             shape: BoxShape.circle,
             border: Border.all(
-              color: _getStatColor(label).withOpacity(0.3),
+              color: _getStatColor(label).withValues(alpha: 0.3),
               width: 2,
             ),
           ),
@@ -421,7 +423,7 @@ class _TreeWidgetState extends State<TreeWidget> with TickerProviderStateMixin {
         return const Color(0xFF4CAF50);
       case 'Happiness':
         return const Color(0xFFFFB74D);
-      case 'Love Points':
+      case 'Love':
         return const Color(0xFFE91E63);
       default:
         return const Color(0xFF6B9B78);
@@ -451,7 +453,7 @@ class _TreeWidgetState extends State<TreeWidget> with TickerProviderStateMixin {
     return Container(
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
-        color: const Color(0xFF6B9B78).withOpacity(0.2),
+        color: const Color(0xFF6B9B78).withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Text(

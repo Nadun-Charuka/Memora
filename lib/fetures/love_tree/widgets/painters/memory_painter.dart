@@ -225,7 +225,7 @@ class MemoryPainter {
     );
 
     // EYE
-    paint.color = Colors.black.withOpacity(0.7);
+    paint.color = Colors.black.withValues(alpha: 0.7);
     canvas.drawCircle(
       Offset(baseSize * 0.45, -baseSize * 0.1),
       baseSize * 0.04,
@@ -240,7 +240,7 @@ class MemoryPainter {
       ..lineTo(baseSize * 0.48, baseSize * 0.05)
       ..close();
     canvas.drawPath(beakPath, paint);
-    paint.color = Colors.white.withOpacity(0.5);
+    paint.color = Colors.white.withValues(alpha: 0.5);
     final beakHighlightPath = Path()
       ..moveTo(baseSize * 0.5, -baseSize * 0.03)
       ..lineTo(baseSize * 0.6, 0)
@@ -266,7 +266,7 @@ class MemoryPainter {
     canvas.scale(bodyScale, 1.0);
 
     // TAIL FEATHERS
-    paint.color = bodyColor1.withOpacity(0.9);
+    paint.color = bodyColor1.withValues(alpha: 0.9);
     final tailPathCenter = Path()
       ..moveTo(-baseSize * 0.45, 0)
       ..lineTo(-baseSize * 0.65, -baseSize * 0.1)
@@ -275,7 +275,7 @@ class MemoryPainter {
       ..close();
     canvas.drawPath(tailPathCenter, paint);
     final tailPaintThin = Paint()
-      ..color = bodyColor1.withOpacity(0.8)
+      ..color = bodyColor1.withValues(alpha: 0.8)
       ..strokeWidth = 1.0
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
@@ -305,7 +305,7 @@ class MemoryPainter {
       ..quadraticBezierTo(baseSize * 0.5, -baseSize * 0.1, baseSize * 0.4, 0)
       ..close();
     canvas.drawPath(wingPath, paint);
-    paint.color = Colors.black.withOpacity(0.2);
+    paint.color = Colors.black.withValues(alpha: 0.2);
     paint.strokeWidth = 0.5;
     paint.style = PaintingStyle.stroke;
     canvas.drawLine(
@@ -332,7 +332,7 @@ class MemoryPainter {
     canvas.translate(x, y);
     canvas.scale(scale);
     final paint = Paint()
-      ..color = const Color(0xFFFFD700).withOpacity(0.8 + twinkle * 0.2)
+      ..color = const Color(0xFFFFD700).withValues(alpha: 0.8 + twinkle * 0.2)
       ..style = PaintingStyle.fill;
     final starPath = Path();
     for (int i = 0; i < 5; i++) {
@@ -354,7 +354,7 @@ class MemoryPainter {
     starPath.close();
     canvas.drawPath(starPath, paint);
     paint
-      ..color = const Color(0xFFFFD700).withOpacity(0.3 * twinkle)
+      ..color = const Color(0xFFFFD700).withValues(alpha: 0.3 * twinkle)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
     canvas.drawPath(starPath, paint);
     canvas.restore();
@@ -373,7 +373,7 @@ class MemoryPainter {
     canvas.save();
     canvas.translate(x + drift, y);
     final opacity = 0.5 + (fallProgress * 0.4);
-    paint.color = const Color(0xFF4682B4).withOpacity(opacity);
+    paint.color = const Color(0xFF4682B4).withValues(alpha: opacity);
     final dropPath = Path()
       ..moveTo(0, -iconSize)
       ..quadraticBezierTo(
@@ -386,7 +386,7 @@ class MemoryPainter {
       ..quadraticBezierTo(0, iconSize * 0.6, -iconSize * 0.3, iconSize * 0.3)
       ..quadraticBezierTo(-iconSize * 0.5, -iconSize * 0.3, 0, -iconSize);
     canvas.drawPath(dropPath, paint);
-    paint.color = Colors.white.withOpacity(0.5 * opacity);
+    paint.color = Colors.white.withValues(alpha: 0.5 * opacity);
     canvas.drawCircle(
       Offset(-iconSize * 0.15, -iconSize * 0.4),
       iconSize * 0.18,
@@ -397,7 +397,7 @@ class MemoryPainter {
       final splashSize = splashProgress * iconSize * 1.5;
       paint.color = const Color(
         0xFF4682B4,
-      ).withOpacity(0.4 * (1 - splashProgress));
+      ).withValues(alpha: 0.4 * (1 - splashProgress));
       for (int i = 0; i < 4; i++) {
         final angle = (i / 4) * math.pi * 2;
         final splashOffset = Offset(
@@ -440,7 +440,7 @@ class MemoryPainter {
       ..color = const Color(0xFFFF6347)
       ..style = PaintingStyle.fill;
     canvas.drawCircle(Offset.zero, iconSize * 0.45, fruitPaint);
-    fruitPaint.color = Colors.white.withOpacity(0.4);
+    fruitPaint.color = Colors.white.withValues(alpha: 0.4);
     canvas.drawCircle(
       Offset(-iconSize * 0.15, -iconSize * 0.15),
       iconSize * 0.15,
@@ -603,7 +603,7 @@ class MemoryPainter {
             iconSize * 0.3,
           );
         canvas.drawPath(heartPath, paint);
-        paint.color = const Color(0xFFFFFFFF).withOpacity(0.8);
+        paint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.8);
         final sparkleAngle = animation.value * math.pi * 4;
         for (int i = 0; i < 4; i++) {
           final angle = (i * math.pi / 2) + sparkleAngle;
@@ -639,7 +639,7 @@ class MemoryPainter {
           paint,
         );
         canvas.restore();
-        paint.color = const Color(0xFFFFFFFF).withOpacity(0.4);
+        paint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.4);
         canvas.drawCircle(
           Offset(-iconSize * 0.25, -iconSize * 0.15),
           iconSize * 0.12,

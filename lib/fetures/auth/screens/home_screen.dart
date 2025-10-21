@@ -183,8 +183,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: [
-                              const Color(0xFF9B85C0).withOpacity(0.9),
-                              const Color(0xFFE8B4D9).withOpacity(0.9),
+                              const Color(0xFF9B85C0).withValues(alpha: 0.9),
+                              const Color(0xFFE8B4D9).withValues(alpha: 0.9),
                             ],
                           ),
                         ),
@@ -208,7 +208,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                     '$partner1Name 💞 $partner2Name',
                                     style: TextStyle(
                                       fontSize: 13,
-                                      color: Colors.white.withOpacity(0.9),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.9,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -273,7 +275,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),

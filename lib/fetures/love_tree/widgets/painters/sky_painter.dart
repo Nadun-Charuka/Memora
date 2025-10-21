@@ -35,7 +35,7 @@ class SkyPainter {
 
   void _drawClouds(Canvas canvas, Size size) {
     final cloudPaint = Paint()
-      ..color = Colors.white.withOpacity(0.7)
+      ..color = Colors.white.withValues(alpha: 0.7)
       ..style = PaintingStyle.fill;
 
     // Cloud 1 - slow, high altitude
