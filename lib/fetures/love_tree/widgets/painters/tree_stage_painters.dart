@@ -362,7 +362,8 @@ class BloomingPainter extends TreeStagePainter {
       {'y': 0.68, 'length': 55.0, 'angle': 0.7, 'flowers': 8},
       {'y': 0.82, 'length': 45.0, 'angle': -0.5, 'flowers': 6},
       {'y': 0.85, 'length': 45.0, 'angle': 0.5, 'flowers': 6},
-      {'y': 0.99, 'length': 25.0, 'angle': 0.1, 'flowers': 6},
+      {'y': 0.99, 'length': 45.0, 'angle': 0.1, 'flowers': 6},
+      {'y': 0.99, 'length': 45.0, 'angle': -0.1, 'flowers': 6},
     ];
 
     for (var branchData in branches) {
@@ -787,5 +788,446 @@ void _drawNaturalLeafCluster(
   }
 }
 
+// 6. Completed State - Magnificent tree with golden glow and celebration effects
+class CompletedPainter extends TreeStagePainter {
+  CompletedPainter({required super.animation, required super.tree});
 
-// 6. completed State - Mature tree with advanced
+  @override
+  void paint(Canvas canvas, Size size, double centerX, double groundY) {
+    groundPainter.paint(canvas, size, groundY);
+
+    final trunkHeight = tree.height * 1.1;
+    final windSway = math.sin(animation.value * math.pi) * 4;
+
+    // Draw magical glow around the tree
+    _drawCelebrationGlow(canvas, centerX, groundY, trunkHeight, animation);
+
+    // Draw majestic trunk
+    _drawMajesticTrunk(
+      canvas,
+      centerX,
+      groundY,
+      trunkHeight,
+      28,
+      windSway,
+      animation,
+    );
+
+    // Draw abundant branches with golden accents
+    final branches = [
+      {'y': 0.15, 'length': 90.0, 'angle': -1.1, 'width': 14.0},
+      {'y': 0.17, 'length': 90.0, 'angle': 1.1, 'width': 14.0},
+      {'y': 0.32, 'length': 85.0, 'angle': -0.9, 'width': 12.0},
+      {'y': 0.34, 'length': 85.0, 'angle': 0.9, 'width': 12.0},
+      {'y': 0.48, 'length': 80.0, 'angle': -0.8, 'width': 11.0},
+      {'y': 0.5, 'length': 80.0, 'angle': 0.8, 'width': 11.0},
+      {'y': 0.64, 'length': 70.0, 'angle': -0.7, 'width': 10.0},
+      {'y': 0.66, 'length': 70.0, 'angle': 0.7, 'width': 10.0},
+      {'y': 0.78, 'length': 60.0, 'angle': -0.6, 'width': 8.0},
+      {'y': 0.8, 'length': 60.0, 'angle': 0.6, 'width': 8.0},
+      {'y': 0.9, 'length': 45.0, 'angle': -0.3, 'width': 7.0},
+      {'y': 0.92, 'length': 45.0, 'angle': 0.3, 'width': 7.0},
+      {'y': 0.98, 'length': 30.0, 'angle': 0.1, 'width': 6.0},
+    ];
+
+    for (var branchData in branches) {
+      final y = groundY - trunkHeight * (branchData['y'] as double);
+      final branchSway = windSway * (1.0 - (branchData['y'] as double));
+      final startOffset = Offset(centerX + branchSway, y);
+      _drawGoldenBranch(canvas, startOffset, branchData, 3, animation);
+    }
+
+    // Draw floating sparkles
+    _drawCelebrationSparkles(canvas, centerX, groundY, trunkHeight, animation);
+  }
+
+  void _drawCelebrationGlow(
+    Canvas canvas,
+    double centerX,
+    double groundY,
+    double height,
+    Animation<double> animation,
+  ) {
+    final glowPulse = (math.sin(animation.value * math.pi * 2) + 1) / 2;
+
+    // Multiple layers of glow for depth
+    final glowPaint1 = Paint()
+      ..color = const Color(0xFFFFD700).withValues(alpha: 0.15 * glowPulse)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 40);
+
+    canvas.drawCircle(
+      Offset(centerX, groundY - height * 0.5),
+      150 + glowPulse * 20,
+      glowPaint1,
+    );
+
+    final glowPaint2 = Paint()
+      ..color = const Color(0xFFFFA500).withValues(alpha: 0.1 * glowPulse)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 60);
+
+    canvas.drawCircle(
+      Offset(centerX, groundY - height * 0.5),
+      180 + glowPulse * 30,
+      glowPaint2,
+    );
+
+    // Subtle rainbow halo
+    final haloPaint = Paint()
+      ..shader =
+          RadialGradient(
+            colors: [
+              Colors.transparent,
+              const Color(0xFFFFB6C1).withValues(alpha: 0.05),
+              const Color(0xFF9B85C0).withValues(alpha: 0.05),
+              Colors.transparent,
+            ],
+            stops: [0.0, 0.4, 0.7, 1.0],
+          ).createShader(
+            Rect.fromCircle(
+              center: Offset(centerX, groundY - height * 0.5),
+              radius: 200,
+            ),
+          );
+
+    canvas.drawCircle(
+      Offset(centerX, groundY - height * 0.5),
+      200,
+      haloPaint,
+    );
+  }
+
+  void _drawMajesticTrunk(
+    Canvas canvas,
+    double centerX,
+    double groundY,
+    double height,
+    double width,
+    double sway,
+    Animation<double> animation,
+  ) {
+    final trunkPaint = Paint();
+    final rect = Rect.fromLTWH(
+      centerX - width,
+      groundY - height,
+      width * 2,
+      height,
+    );
+
+    trunkPaint.shader = LinearGradient(
+      begin: Alignment.centerLeft,
+      end: Alignment.centerRight,
+      colors: [
+        const Color(0xFF4A3428),
+        const Color(0xFF8D6E63),
+        const Color(0xFF6D4C41),
+        const Color(0xFF4A3428),
+      ],
+      stops: [0.0, 0.3, 0.7, 1.0],
+    ).createShader(rect);
+
+    final path = Path()
+      ..moveTo(centerX - width * 0.8, groundY + 5)
+      ..quadraticBezierTo(
+        centerX - width * 0.6,
+        groundY - 5,
+        centerX - width * 0.55,
+        groundY - 15,
+      )
+      ..lineTo(centerX - width * 0.35 + sway, groundY - height)
+      ..lineTo(centerX + width * 0.35 + sway, groundY - height)
+      ..lineTo(centerX + width * 0.55, groundY - 15)
+      ..quadraticBezierTo(
+        centerX + width * 0.6,
+        groundY - 5,
+        centerX + width * 0.8,
+        groundY + 5,
+      )
+      ..close();
+
+    canvas.drawPath(path, trunkPaint);
+
+    // Enhanced bark texture with golden highlights
+    final barkPaint = Paint()
+      ..color = Colors.black.withValues(alpha: 0.2)
+      ..strokeWidth = 2.0
+      ..style = PaintingStyle.stroke;
+
+    final goldenBarkPaint = Paint()
+      ..color = const Color(0xFFFFD700).withValues(alpha: 0.3)
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
+
+    for (double i = 0; i < height; i += 12) {
+      final textureSway = math.sin(animation.value * math.pi * 2 + i * 0.1) * 2;
+      final offsetX = math.sin(i * 0.2) * 4;
+
+      // Dark bark lines
+      canvas.drawLine(
+        Offset(centerX - width * 0.3 + offsetX + textureSway, groundY - i),
+        Offset(centerX + width * 0.2 + offsetX + textureSway, groundY - i - 8),
+        barkPaint,
+      );
+
+      // Golden accent lines (less frequent)
+      if (i % 30 == 0) {
+        canvas.drawLine(
+          Offset(centerX - width * 0.25 + offsetX, groundY - i - 5),
+          Offset(centerX + width * 0.15 + offsetX, groundY - i - 12),
+          goldenBarkPaint,
+        );
+      }
+    }
+
+    // Add trunk glow effect
+    final trunkGlowPaint = Paint()
+      ..color = const Color(0xFFFFD700).withValues(alpha: 0.1)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
+    canvas.drawPath(path, trunkGlowPaint);
+  }
+
+  void _drawGoldenBranch(
+    Canvas canvas,
+    Offset start,
+    Map<String, double> branchData,
+    int depth,
+    Animation<double> animation,
+  ) {
+    if (depth <= 0) return;
+
+    final length = branchData['length']!;
+    final angle = branchData['angle']!;
+    final width = branchData['width']!;
+
+    final paint = Paint()
+      ..strokeWidth = width
+      ..strokeCap = StrokeCap.round;
+
+    final rect = Rect.fromPoints(
+      start,
+      Offset(start.dx + length, start.dy + length),
+    );
+
+    paint.shader = LinearGradient(
+      colors: [
+        const Color(0xFF6D4C41),
+        const Color(0xFFA1887F),
+        const Color(0xFFBCAA9F),
+      ],
+    ).createShader(rect);
+
+    final endPoint = Offset(
+      start.dx + length * math.sin(angle),
+      start.dy - length * math.cos(angle),
+    );
+
+    // Draw branch with tapering
+    final branchPath = Path()..moveTo(start.dx, start.dy);
+    for (double t = 0; t <= 1.0; t += 0.08) {
+      final x = lerpDouble(start.dx, endPoint.dx, t)!;
+      final y = lerpDouble(start.dy, endPoint.dy, t)!;
+      final currentWidth = lerpDouble(width, 1.5, t)!;
+      branchPath.addOval(
+        Rect.fromCircle(center: Offset(x, y), radius: currentWidth * 0.5),
+      );
+    }
+    canvas.drawPath(branchPath, paint);
+
+    // Add golden shimmer to branch tips
+    if (depth == 3) {
+      final shimmerPaint = Paint()
+        ..color = const Color(0xFFFFD700).withValues(
+          alpha: 0.2 * ((math.sin(animation.value * math.pi * 2) + 1) / 2),
+        )
+        ..strokeWidth = width * 0.8
+        ..strokeCap = StrokeCap.round;
+
+      final shimmerPath = Path()..moveTo(start.dx, start.dy);
+      for (double t = 0.7; t <= 1.0; t += 0.1) {
+        final x = lerpDouble(start.dx, endPoint.dx, t)!;
+        final y = lerpDouble(start.dy, endPoint.dy, t)!;
+        shimmerPath.addOval(
+          Rect.fromCircle(center: Offset(x, y), radius: width * 0.4),
+        );
+      }
+      canvas.drawPath(shimmerPath, shimmerPaint);
+    }
+
+    // Draw luxurious leaf cluster
+    _drawLuxuriousLeafCluster(canvas, endPoint, 8, 14, angle, animation);
+
+    // Draw sub-branches
+    if (depth > 1) {
+      final subBranchData = {
+        'length': length * 0.65,
+        'angle': angle + (angle > 0 ? -0.4 : 0.4),
+        'width': width * 0.65,
+      };
+      final subBranchStart = Offset(
+        lerpDouble(start.dx, endPoint.dx, 0.6)!,
+        lerpDouble(start.dy, endPoint.dy, 0.6)!,
+      );
+
+      _drawGoldenBranch(
+        canvas,
+        subBranchStart,
+        subBranchData,
+        depth - 1,
+        animation,
+      );
+    }
+  }
+
+  void _drawLuxuriousLeafCluster(
+    Canvas canvas,
+    Offset center,
+    int count,
+    double size,
+    double baseRotation,
+    Animation<double> animation,
+  ) {
+    final random = math.Random(center.dx.toInt());
+
+    for (int i = 0; i < count; i++) {
+      final angle = baseRotation + (random.nextDouble() - 0.5) * 1.8;
+      final distance = size * 0.4 + random.nextDouble() * size;
+      final rustleX = math.sin(animation.value * math.pi * 2 + i * 0.5) * 3;
+      final rustleY = math.cos(animation.value * math.pi * 2 + i * 0.5) * 2;
+
+      final offset = Offset(
+        center.dx + math.cos(angle) * distance + rustleX,
+        center.dy + math.sin(angle) * distance + rustleY,
+      );
+
+      // Mix of regular and golden-tinted leaves
+      final isGoldenLeaf = i % 4 == 0;
+      _drawEnhancedLeaf(
+        canvas,
+        offset,
+        size * (0.9 + random.nextDouble() * 0.3),
+        angle,
+        isGoldenLeaf,
+        animation,
+      );
+    }
+  }
+
+  void _drawEnhancedLeaf(
+    Canvas canvas,
+    Offset center,
+    double size,
+    double rotation,
+    bool isGolden,
+    Animation<double> animation,
+  ) {
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate(rotation);
+
+    final paint = Paint()..style = PaintingStyle.fill;
+
+    if (isGolden) {
+      // Golden accent leaves
+      final shimmer = (math.sin(animation.value * math.pi * 2) + 1) / 2;
+      paint.shader = RadialGradient(
+        colors: [
+          Color.lerp(
+            const Color(0xFFFFD700),
+            const Color(0xFFFFA500),
+            shimmer,
+          )!,
+          const Color(0xFF7CB342),
+        ],
+      ).createShader(Rect.fromCircle(center: Offset.zero, radius: size));
+    } else {
+      // Regular vibrant leaves
+      paint.shader = RadialGradient(
+        colors: [
+          const Color(0xFF8BC34A),
+          const Color(0xFF7CB342),
+          const Color(0xFF558B2F),
+        ],
+        stops: [0.0, 0.5, 1.0],
+      ).createShader(Rect.fromCircle(center: Offset.zero, radius: size));
+    }
+
+    final path = Path()
+      ..moveTo(0, -size / 2)
+      ..quadraticBezierTo(size * 0.5, -size * 0.2, size * 0.6, 0)
+      ..quadraticBezierTo(size * 0.5, size * 0.2, 0, size / 2)
+      ..quadraticBezierTo(-size * 0.5, size * 0.2, -size * 0.6, 0)
+      ..quadraticBezierTo(-size * 0.5, -size * 0.2, 0, -size / 2);
+    canvas.drawPath(path, paint);
+
+    // Enhanced vein
+    final veinPaint = Paint()
+      ..color = isGolden
+          ? const Color(0xFFFFD700).withValues(alpha: 0.3)
+          : Colors.black.withValues(alpha: 0.15)
+      ..strokeWidth = 0.8
+      ..style = PaintingStyle.stroke;
+    canvas.drawLine(Offset(0, -size / 2), Offset(0, size / 2), veinPaint);
+
+    // Add subtle glow to golden leaves
+    if (isGolden) {
+      final glowPaint = Paint()
+        ..color = const Color(0xFFFFD700).withValues(alpha: 0.2)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+      canvas.drawPath(path, glowPaint);
+    }
+
+    canvas.restore();
+  }
+
+  void _drawCelebrationSparkles(
+    Canvas canvas,
+    double centerX,
+    double groundY,
+    double height,
+    Animation<double> animation,
+  ) {
+    final random = math.Random(42);
+
+    for (int i = 0; i < 20; i++) {
+      final angle = random.nextDouble() * math.pi * 2;
+      final radius = 80 + random.nextDouble() * 120;
+      final sparklePhase = (animation.value + i * 0.05) % 1.0;
+      final opacity = math.sin(sparklePhase * math.pi);
+
+      if (opacity <= 0) continue;
+
+      final x = centerX + math.cos(angle + animation.value * 2) * radius;
+      final y =
+          groundY -
+          height * 0.5 +
+          math.sin(angle + animation.value * 2) * radius;
+
+      final sparkleSize = 2.0 + random.nextDouble() * 3.0;
+
+      // Draw sparkle cross
+      final sparklePaint = Paint()
+        ..color = const Color(0xFFFFD700).withValues(alpha: opacity * 0.8)
+        ..strokeWidth = 1.5
+        ..strokeCap = StrokeCap.round;
+
+      // Horizontal line
+      canvas.drawLine(
+        Offset(x - sparkleSize, y),
+        Offset(x + sparkleSize, y),
+        sparklePaint,
+      );
+
+      // Vertical line
+      canvas.drawLine(
+        Offset(x, y - sparkleSize),
+        Offset(x, y + sparkleSize),
+        sparklePaint,
+      );
+
+      // Center glow
+      final glowPaint = Paint()
+        ..color = const Color(0xFFFFFFFF).withValues(alpha: opacity * 0.6)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+      canvas.drawCircle(Offset(x, y), sparkleSize * 0.5, glowPaint);
+    }
+  }
+}

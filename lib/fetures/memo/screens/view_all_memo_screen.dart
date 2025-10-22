@@ -27,7 +27,7 @@ class _MemoryListScreenState extends ConsumerState<MemoryListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final currentUser = ref.watch(currentUserProvider);
+    final currentUser = ref.watch(currentUserAsyncProvider);
 
     return Scaffold(
       backgroundColor: Colors.grey.shade50,

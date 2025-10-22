@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:memora/core/utils/transition.dart';
 import 'package:memora/fetures/auth/provider/auth_provider.dart';
 import 'package:memora/fetures/love_tree/model/tree_model.dart';
 import 'package:memora/fetures/love_tree/screens/add_memory_screen.dart';
@@ -37,7 +38,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _loadVillageId() async {
-    final user = ref.read(authServiceProvider).currentUser;
+    final user = ref.read(currentUserProvider);
     if (user == null) return;
 
     final villageId = await _villageService.getUserVillageId(user.uid);
@@ -65,7 +66,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Future<void> _handlePlantTree() async {
     if (_villageId == null) return;
 
-    final user = ref.read(authServiceProvider).currentUser;
+    final user = ref.read(currentUserProvider);
     if (user == null) return;
 
     final result = await _treeService.plantTree(_villageId!, user.uid);
@@ -86,31 +87,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // ✨ NEW: Better UX for add memory button
   Future<void> _handleAddMemory() async {
     if (_villageId == null) return;
-
-    final user = ref.read(authServiceProvider).currentUser;
+    final user = ref.read(currentUserProvider);
     if (user == null) return;
 
-    // Check if user can add memory
     final canAdd = await _memoryService.canAddMemoryToday(
       _villageId!,
       user.uid,
     );
 
     if (!canAdd) {
-      // Show friendly dialog instead of error snackbar
       _showAlreadyAddedTodayDialog();
       return;
     }
 
-    // Navigate to add memory screen
     if (mounted) {
-      final result = await Navigator.of(context).push<bool>(
-        MaterialPageRoute(
-          builder: (context) => AddMemoryScreen(villageId: _villageId!),
-        ),
-      );
+      final result = await Navigator.of(
+        context,
+      ).push(appFadeScaleRoute(AddMemoryScreen(villageId: _villageId!)));
 
-      // Refresh the "added today" status if memory was added
       if (result == true && mounted) {
         setState(() {
           _hasAddedMemoryToday = true;
@@ -390,7 +384,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         bottom: 200,
                         right: 10,
                         child: tree.isPlanted
-                            ? _buildAddMemoryFAB()
+                            ? (tree.isCompleted
+                                  ? _buildCongratulationsBanner()
+                                  : _buildAddMemoryFAB())
                             : _buildPlantTreeButton(village),
                       ),
 
@@ -611,13 +607,54 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ],
             ),
           ),
-
         FloatingActionButton(
           onPressed: _handleAddMemory,
           backgroundColor: const Color(0xFF6B9B78),
           child: const Icon(Icons.add),
         ),
       ],
+    );
+  }
+
+  Widget _buildCongratulationsBanner() {
+    return GestureDetector(
+      onTap: () {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('🎉 Congratulations!'),
+            content: const Text(
+              'Your Love Tree is fully grown! This shows how consistent and caring your relationship has been. 💚',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Yay!'),
+              ),
+            ],
+          ),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Icon(Icons.emoji_events, color: Color(0xFF6B9B78), size: 22),
+          ],
+        ),
+      ),
     );
   }
 
@@ -668,71 +705,77 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _showOptionsMenu(Village village) {
-    final user = ref.read(authServiceProvider).currentUser;
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.person_2_outlined),
-              title: RichText(
-                text: TextSpan(
-                  style: const TextStyle(color: Colors.black, fontSize: 18),
-                  children: [
-                    const TextSpan(text: 'Account Name: '),
-                    TextSpan(
-                      text: user?.displayName ?? "?",
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+      builder: (context) => Consumer(
+        builder: (context, ref, _) {
+          final user = ref.watch(currentUserAsyncProvider);
+
+          return Container(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.person_2_outlined),
+                  title: RichText(
+                    text: TextSpan(
+                      style: const TextStyle(color: Colors.black, fontSize: 18),
+                      children: [
+                        const TextSpan(text: 'Account Name: '),
+                        TextSpan(
+                          text: user == null
+                              ? "Loading..."
+                              : (user.displayName ?? "?"),
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
-              onTap: () {},
+                ListTile(
+                  leading: const Icon(Icons.info_outline),
+                  title: const Text('About Village'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showVillageInfo(village);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.history),
+                  title: const Text('View All Memories'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _navigateToAllMemories();
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.settings),
+                  title: const Text('Settings'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    // TODO: Navigate to settings
+                  },
+                ),
+                const Divider(),
+                ListTile(
+                  leading: const Icon(Icons.logout, color: Colors.red),
+                  title: const Text(
+                    'Sign Out',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _handleSignOut();
+                  },
+                ),
+              ],
             ),
-            ListTile(
-              leading: const Icon(Icons.info_outline),
-              title: const Text('About Village'),
-              onTap: () {
-                Navigator.pop(context);
-                _showVillageInfo(village);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.history),
-              title: const Text('View All Memories'),
-              onTap: () {
-                Navigator.pop(context);
-                _navigateToAllMemories();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.settings),
-              title: const Text('Settings'),
-              onTap: () {
-                Navigator.pop(context);
-                // TODO: Navigate to settings
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.logout, color: Colors.red),
-              title: const Text(
-                'Sign Out',
-                style: TextStyle(color: Colors.red),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                _handleSignOut();
-              },
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

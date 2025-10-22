@@ -117,9 +117,9 @@ class LoveTree {
   static TreeStage calculateStage(int memoryCount, bool isPlanted) {
     if (!isPlanted) return TreeStage.notPlanted;
     if (memoryCount >= MAX_MEMORIES) return TreeStage.completed;
-    if (memoryCount <= 10) return TreeStage.seedling;
-    if (memoryCount <= 25) return TreeStage.growing;
-    if (memoryCount <= 45) return TreeStage.blooming;
+    if (memoryCount <= 1) return TreeStage.seedling;
+    if (memoryCount <= 2) return TreeStage.growing;
+    if (memoryCount <= 3) return TreeStage.blooming;
     return TreeStage.mature;
   }
 

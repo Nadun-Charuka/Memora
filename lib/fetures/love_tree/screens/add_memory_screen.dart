@@ -16,23 +16,51 @@ class AddMemoryScreen extends ConsumerStatefulWidget {
   ConsumerState<AddMemoryScreen> createState() => _AddMemoryScreenState();
 }
 
-class _AddMemoryScreenState extends ConsumerState<AddMemoryScreen> {
+class _AddMemoryScreenState extends ConsumerState<AddMemoryScreen>
+    with SingleTickerProviderStateMixin {
   final _contentController = TextEditingController();
   final _memoryService = MemoryService();
+  final _focusNode = FocusNode();
+
   MemoryEmotion _selectedEmotion = MemoryEmotion.happy;
   bool _isLoading = false;
   bool _checkingEligibility = true;
   bool _canAddToday = false;
 
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
   @override
   void initState() {
     super.initState();
+    _animController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOut,
+    );
+    _slideAnimation =
+        Tween<Offset>(
+          begin: const Offset(0, 0.1),
+          end: Offset.zero,
+        ).animate(
+          CurvedAnimation(
+            parent: _animController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
+
     _checkEligibility();
   }
 
   @override
   void dispose() {
     _contentController.dispose();
+    _focusNode.dispose();
+    _animController.dispose();
     super.dispose();
   }
 
@@ -52,36 +80,101 @@ class _AddMemoryScreenState extends ConsumerState<AddMemoryScreen> {
       });
 
       if (!canAdd) {
-        _showSnackBar(
-          'You\'ve already added a memory today! 💚\nCome back tomorrow to share more moments.',
-          isError: true,
-        );
-        await Future.delayed(const Duration(seconds: 2));
-        if (mounted) Navigator.pop(context);
+        _showErrorDialog();
+      } else {
+        _animController.forward();
       }
     }
   }
 
+  void _showErrorDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+        ),
+        contentPadding: const EdgeInsets.all(24),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: const Color(0xFF6B9B78).withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Center(
+                child: Text('💚', style: TextStyle(fontSize: 40)),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'All Set for Today!',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'You\'ve already shared a memory today. Come back tomorrow to continue growing your tree! 🌱',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade600,
+                height: 1.5,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.pop(context);
+              },
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF6B9B78),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+              child: const Text('Got it!'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _handleAddMemory() async {
-    if (_contentController.text.trim().isEmpty) {
-      _showSnackBar('Please write something about this memory', isError: true);
+    final content = _contentController.text.trim();
+
+    if (content.isEmpty) {
+      _showSnackBar('Please write something about this memory 📝');
       return;
     }
 
-    if (_contentController.text.trim().length < 10) {
-      _showSnackBar(
-        'Please write at least 10 characters',
-        isError: true,
-      );
+    if (content.length < 10) {
+      _showSnackBar('Please write at least 10 characters ✍️');
       return;
     }
+
+    // Unfocus keyboard
+    _focusNode.unfocus();
 
     setState(() => _isLoading = true);
 
     final user = ref.read(authServiceProvider).currentUser;
     if (user == null) {
       setState(() => _isLoading = false);
-      _showSnackBar('Please login to add memories', isError: true);
+      _showSnackBar('Please login to add memories');
       return;
     }
 
@@ -89,7 +182,7 @@ class _AddMemoryScreenState extends ConsumerState<AddMemoryScreen> {
       villageId: widget.villageId,
       userId: user.uid,
       userName: user.displayName ?? 'You',
-      content: _contentController.text.trim(),
+      content: content,
       emotion: _selectedEmotion,
     );
 
@@ -98,23 +191,91 @@ class _AddMemoryScreenState extends ConsumerState<AddMemoryScreen> {
     setState(() => _isLoading = false);
 
     if (result.success) {
-      _showSnackBar(result.message, isError: false);
-      await Future.delayed(const Duration(milliseconds: 800));
-      if (mounted) {
-        Navigator.pop(context, true); // Return true to indicate success
-      }
+      _showSuccessDialog(result.message);
     } else {
-      _showSnackBar(result.message, isError: true);
+      _showSnackBar(result.message);
     }
   }
 
-  void _showSnackBar(String message, {required bool isError}) {
+  void _showSuccessDialog(String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+        ),
+        contentPadding: const EdgeInsets.all(24),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: const Color(0xFF6B9B78).withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Text(
+                  _selectedEmotion.icon,
+                  style: const TextStyle(fontSize: 40),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Memory Added!',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade600,
+                height: 1.5,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.pop(context, true);
+              },
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF6B9B78),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+              child: const Text('View Tree'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: isError ? Colors.red.shade400 : Colors.green.shade400,
+        backgroundColor: const Color(0xFF6B9B78),
         behavior: SnackBarBehavior.floating,
-        duration: Duration(seconds: isError ? 3 : 2),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        margin: const EdgeInsets.all(16),
       ),
     );
   }
@@ -133,7 +294,7 @@ class _AddMemoryScreenState extends ConsumerState<AddMemoryScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                'Checking eligibility...',
+                'Preparing...',
                 style: TextStyle(
                   color: Colors.grey.shade600,
                   fontSize: 14,
@@ -157,173 +318,201 @@ class _AddMemoryScreenState extends ConsumerState<AddMemoryScreen> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.black),
-          onPressed: _isLoading ? null : () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'Add Memory',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+      backgroundColor: const Color(0xFFFAFAFA),
+      body: SafeArea(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Daily reminder banner
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFF6B9B78).withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: const Color(0xFF6B9B78).withValues(alpha: 0.3),
-                ),
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.info_outline,
-                    color: Color(0xFF4A7C59),
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'You can add one memory per day',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade700,
-                        fontWeight: FontWeight.w500,
-                      ),
+            // Modern Header
+            _buildHeader(),
+
+            // Content
+            Expanded(
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: SlideTransition(
+                  position: _slideAnimation,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Emotion Selector
+                        _buildEmotionSection(),
+                        const SizedBox(height: 24),
+
+                        // Content Input
+                        _buildContentSection(),
+                        const SizedBox(height: 20),
+
+                        // Growth Preview Card
+                        _buildGrowthPreview(),
+                      ],
                     ),
                   ),
-                ],
+                ),
               ),
             ),
-            const SizedBox(height: 24),
 
-            // Emotion selector
+            // Bottom Action Bar
+            _buildBottomBar(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.close, size: 24),
+            onPressed: _isLoading ? null : () => Navigator.pop(context),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'New Memory',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  'Share your moment 🌱',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Inside the Row in _buildHeader(), replace the Container with "Today" badge:
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFF6B9B78).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: const Color(0xFF6B9B78).withValues(alpha: 0.3),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.today,
+                  size: 14,
+                  color: Color(0xFF6B9B78),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '1 memo per day',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey.shade700,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmotionSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 4,
+              height: 20,
+              decoration: BoxDecoration(
+                color: const Color(0xFF6B9B78),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 8),
             const Text(
               'How are you feeling?',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF4A7C59),
               ),
             ),
-            const SizedBox(height: 16),
-            _buildEmotionSelector(),
-            const SizedBox(height: 32),
+          ],
+        ),
+        const SizedBox(height: 16),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: MemoryEmotion.values.map((emotion) {
+              final isSelected = _selectedEmotion == emotion;
+              return Padding(
+                padding: const EdgeInsets.only(right: 10),
+                child: _buildEmotionChip(emotion, isSelected),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
 
-            // Content input
-            const Text(
-              'What happened?',
+  Widget _buildEmotionChip(MemoryEmotion emotion, bool isSelected) {
+    return GestureDetector(
+      onTap: _isLoading
+          ? null
+          : () => setState(() => _selectedEmotion = emotion),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF6B9B78) : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: isSelected
+                  ? const Color(0xFF6B9B78).withValues(alpha: 0.3)
+                  : Colors.black.withValues(alpha: 0.05),
+              blurRadius: isSelected ? 8 : 4,
+              offset: Offset(0, isSelected ? 4 : 2),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Text(
+              emotion.icon,
+              style: const TextStyle(fontSize: 28),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              emotion.name.toUpperCase(),
               style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF4A7C59),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _contentController,
-              maxLines: 8,
-              maxLength: 500,
-              enabled: !_isLoading,
-              decoration: InputDecoration(
-                hintText:
-                    'Share this special moment...\n\nExample: "We went to the beach today and watched the sunset together. It was magical! ❤️"',
-                hintStyle: TextStyle(
-                  color: Colors.grey.shade400,
-                  fontSize: 14,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(
-                    color: Color(0xFF6B9B78),
-                    width: 2,
-                  ),
-                ),
-                filled: true,
-                fillColor: Colors.grey.shade50,
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Emotion info box
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF6B9B78).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  Text(
-                    _selectedEmotion.icon,
-                    style: const TextStyle(fontSize: 24),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      _getEmotionDescription(_selectedEmotion),
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: Color(0xFF4A7C59),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 32),
-
-            // Add button
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: FilledButton(
-                onPressed: _isLoading ? null : _handleAddMemory,
-                style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF6B9B78),
-                  disabledBackgroundColor: Colors.grey.shade300,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                child: _isLoading
-                    ? const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2.5,
-                        ),
-                      )
-                    : const Text(
-                        'Add to Tree',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                color: isSelected ? Colors.white : Colors.black87,
+                fontWeight: FontWeight.w600,
+                fontSize: 11,
+                letterSpacing: 0.5,
               ),
             ),
           ],
@@ -332,75 +521,293 @@ class _AddMemoryScreenState extends ConsumerState<AddMemoryScreen> {
     );
   }
 
-  Widget _buildEmotionSelector() {
-    return Wrap(
-      spacing: 12,
-      runSpacing: 12,
-      children: MemoryEmotion.values.map((emotion) {
-        final isSelected = _selectedEmotion == emotion;
-        return GestureDetector(
-          onTap: _isLoading
-              ? null
-              : () => setState(() => _selectedEmotion = emotion),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? const Color(0xFF6B9B78)
-                  : Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: isSelected
-                    ? const Color(0xFF6B9B78)
-                    : Colors.grey.shade300,
-                width: 2,
+  Widget _buildContentSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 4,
+              height: 20,
+              decoration: BoxDecoration(
+                color: const Color(0xFF6B9B78),
+                borderRadius: BorderRadius.circular(2),
               ),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  emotion.icon,
-                  style: const TextStyle(fontSize: 20),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  emotion.name.toUpperCase(),
-                  style: TextStyle(
-                    color: isSelected ? Colors.white : Colors.black87,
-                    fontWeight: isSelected
-                        ? FontWeight.bold
-                        : FontWeight.normal,
-                    fontSize: 14,
-                  ),
-                ),
-              ],
+            const SizedBox(width: 8),
+            const Text(
+              'What happened?',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: TextField(
+            controller: _contentController,
+            focusNode: _focusNode,
+            maxLines: 8,
+            maxLength: 500,
+            enabled: !_isLoading,
+            style: const TextStyle(
+              fontSize: 15,
+              height: 1.5,
+            ),
+            decoration: InputDecoration(
+              hintText:
+                  'Share your special moment...\n\nTip: Be specific! "We watched the sunset at the beach" is better than "Had fun today"',
+              hintStyle: TextStyle(
+                color: Colors.grey.shade400,
+                fontSize: 14,
+                height: 1.5,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.all(16),
+              counterStyle: TextStyle(
+                color: Colors.grey.shade500,
+                fontSize: 12,
+              ),
             ),
           ),
-        );
-      }).toList(),
+        ),
+      ],
     );
   }
 
-  String _getEmotionDescription(MemoryEmotion emotion) {
+  Widget _buildGrowthPreview() {
+    final stats = _getEmotionStats(_selectedEmotion);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF6B9B78).withValues(alpha: 0.1),
+            const Color(0xFF6B9B78).withValues(alpha: 0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFF6B9B78).withValues(alpha: 0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                _selectedEmotion.icon,
+                style: const TextStyle(fontSize: 24),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                '${_selectedEmotion.name.toUpperCase()} Impact',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF4A7C59),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatBadge(
+                  '🌱 +${stats['growth']}',
+                  'Growth',
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildStatBadge(
+                  '💚 +${stats['love']}',
+                  'Love Points',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            stats['description']!,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey.shade700,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatBadge(String value, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF6B9B78),
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              color: Colors.grey.shade600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomBar() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          width: double.infinity,
+          height: 56,
+          child: FilledButton(
+            onPressed: _isLoading ? null : _handleAddMemory,
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF6B9B78),
+              disabledBackgroundColor: Colors.grey.shade300,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              elevation: 0,
+            ),
+            child: _isLoading
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2.5,
+                    ),
+                  )
+                : const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.add_circle_outline, size: 20),
+                      SizedBox(width: 8),
+                      Text(
+                        'Add to Tree',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Map<String, dynamic> _getEmotionStats(MemoryEmotion emotion) {
     switch (emotion) {
       case MemoryEmotion.love:
-        return 'A heart will bloom on your tree! +8 growth, +10 love points (Maximum!)';
+        return {
+          'growth': '8.0',
+          'love': '10',
+          'description':
+              'A beautiful heart will bloom on your tree! This is the most powerful memory.',
+        };
       case MemoryEmotion.joyful:
-        return 'Your tree will bear a delicious fruit! +7 growth, +8 love points';
+        return {
+          'growth': '7.0',
+          'love': '8',
+          'description':
+              'Your tree will bear delicious fruit to celebrate this joyful moment!',
+        };
       case MemoryEmotion.happy:
-        return 'This memory will add a beautiful flower to your tree! +6 growth, +6 love points';
+        return {
+          'growth': '6.0',
+          'love': '6',
+          'description':
+              'A beautiful flower will bloom, adding color to your growing tree.',
+        };
       case MemoryEmotion.excited:
-        return 'A bird will perch on your tree! +6 growth, +6 love points';
+        return {
+          'growth': '6.0',
+          'love': '6',
+          'description':
+              'A cheerful bird will perch on your branches, bringing life to your tree!',
+        };
       case MemoryEmotion.grateful:
-        return 'A shining star will light up your tree! +5 growth, +5 love points';
+        return {
+          'growth': '5.0',
+          'love': '5',
+          'description':
+              'A shining star will light up your tree, showing appreciation.',
+        };
       case MemoryEmotion.peaceful:
-        return 'A gentle leaf will appear! +4 growth, +4 love points';
+        return {
+          'growth': '4.0',
+          'love': '4',
+          'description':
+              'Gentle leaves will appear, creating a calm and serene atmosphere.',
+        };
       case MemoryEmotion.nostalgic:
-        return 'A butterfly will visit your tree! +3 growth, +3 love points';
+        return {
+          'growth': '3.0',
+          'love': '3',
+          'description':
+              'A butterfly will visit, reminding you of beautiful past moments.',
+        };
       case MemoryEmotion.sad:
-        return 'Even rain helps trees grow. Your tree will understand. +1 growth, +2 love points';
+        return {
+          'growth': '1.0',
+          'love': '2',
+          'description':
+              'Even rain helps trees grow. Your tree supports you through all emotions.',
+        };
     }
   }
 }

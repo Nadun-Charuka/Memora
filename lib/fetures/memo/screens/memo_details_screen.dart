@@ -91,6 +91,7 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: _getEmotionColorForScaffold(widget.memory.emotion),
       appBar: AppBar(
         backgroundColor: _getEmotionColor(widget.memory.emotion),
         foregroundColor: Colors.white,
@@ -391,6 +392,27 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
         return const Color(0xFFBA55D3);
       case MemoryEmotion.sad:
         return const Color(0xFF4682B4);
+    }
+  }
+
+  Color _getEmotionColorForScaffold(MemoryEmotion emotion) {
+    switch (emotion) {
+      case MemoryEmotion.love:
+        return const Color.fromARGB(255, 242, 190, 217);
+      case MemoryEmotion.happy:
+        return const Color.fromARGB(255, 251, 248, 248);
+      case MemoryEmotion.joyful:
+        return const Color.fromARGB(255, 250, 160, 144);
+      case MemoryEmotion.excited:
+        return const Color.fromARGB(255, 251, 219, 139);
+      case MemoryEmotion.grateful:
+        return const Color.fromARGB(255, 254, 238, 148);
+      case MemoryEmotion.peaceful:
+        return const Color.fromARGB(255, 188, 250, 188);
+      case MemoryEmotion.nostalgic:
+        return const Color.fromARGB(255, 240, 180, 255);
+      case MemoryEmotion.sad:
+        return const Color.fromARGB(255, 196, 227, 252);
     }
   }
 }

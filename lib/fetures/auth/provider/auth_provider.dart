@@ -16,6 +16,12 @@ final currentUserProvider = Provider<User?>((ref) {
   return ref.watch(authServiceProvider).currentUser;
 });
 
+//for instant reactive
+final currentUserAsyncProvider = Provider<User?>((ref) {
+  final user = ref.watch(authStateProvider.select((a) => a.value));
+  return user;
+});
+
 // Loading state provider for auth operations
 final authLoadingProvider = StateProvider<bool>((ref) => false);
 

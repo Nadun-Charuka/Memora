@@ -49,7 +49,7 @@ class TreePainter extends CustomPainter {
            animation: animation,
            tree: tree,
          ),
-         TreeStage.completed: MaturePainter(
+         TreeStage.completed: CompletedPainter(
            animation: animation,
            tree: tree,
          ),

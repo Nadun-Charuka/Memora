@@ -549,37 +549,47 @@ class MemoryPainter {
     canvas.scale(scale);
     switch (emotion) {
       case MemoryEmotion.happy:
-        paint.color = const Color(0xFFFFB6C1);
-        final petalRotation = animation.value * 0.2;
-        for (int i = 0; i < 6; i++) {
+        // Realistic pink flower with 5 petals
+        paint.color = const Color(0xFFFF69B4); // Hot pink
+
+        // Draw 5 petals
+        for (int i = 0; i < 5; i++) {
           canvas.save();
-          canvas.rotate((i * math.pi * 2 / 6) + petalRotation);
+          canvas.rotate(i * math.pi * 2 / 5);
+
+          // Simple petal shape
           final petalPath = Path()
             ..moveTo(0, 0)
             ..quadraticBezierTo(
-              iconSize * 0.15,
-              -iconSize * 0.3,
+              iconSize * 0.2,
+              -iconSize * 0.25,
               0,
-              -iconSize * 0.5,
+              -iconSize * 0.45,
             )
-            ..quadraticBezierTo(-iconSize * 0.15, -iconSize * 0.3, 0, 0);
+            ..quadraticBezierTo(
+              -iconSize * 0.2,
+              -iconSize * 0.25,
+              0,
+              0,
+            );
+
+          // Gradient effect - lighter at edges
+          paint.color = Color.lerp(
+            const Color(0xFFFFB6C1), // Light pink
+            const Color(0xFFFF69B4), // Hot pink
+            (i % 2 == 0) ? 0.7 : 1.0,
+          )!;
           canvas.drawPath(petalPath, paint);
           canvas.restore();
         }
+
+        // Simple yellow center
         paint.color = const Color(0xFFFFD700);
-        canvas.drawCircle(Offset.zero, iconSize * 0.2, paint);
-        paint.color = const Color(0xFFFFB700);
-        for (int i = 0; i < 8; i++) {
-          final angle = (i / 8) * math.pi * 2;
-          canvas.drawCircle(
-            Offset(
-              math.cos(angle) * iconSize * 0.12,
-              math.sin(angle) * iconSize * 0.12,
-            ),
-            iconSize * 0.03,
-            paint,
-          );
-        }
+        canvas.drawCircle(Offset.zero, iconSize * 0.15, paint);
+
+        // Center detail dots
+        paint.color = const Color(0xFFFFA500);
+        canvas.drawCircle(Offset.zero, iconSize * 0.08, paint);
         break;
       case MemoryEmotion.love:
         final heartBeat = 1.0 + math.sin(animation.value * math.pi * 4) * 0.15;
