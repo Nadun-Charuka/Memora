@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:memora/fetures/auth/provider/auth_provider.dart';
-import 'package:memora/fetures/love_tree/services/tree_service.dart';
-import 'package:memora/models/tree_model.dart';
+import 'package:memora/fetures/memo/model/memory_model.dart';
+import 'package:memora/fetures/memo/service/memory_service.dart';
 
 class AddMemoryScreen extends ConsumerStatefulWidget {
-  final String coupleId;
+  final String villageId;
 
   const AddMemoryScreen({
     super.key,
-    required this.coupleId,
+    required this.villageId,
   });
 
   @override
@@ -18,13 +18,48 @@ class AddMemoryScreen extends ConsumerStatefulWidget {
 
 class _AddMemoryScreenState extends ConsumerState<AddMemoryScreen> {
   final _contentController = TextEditingController();
+  final _memoryService = MemoryService();
   MemoryEmotion _selectedEmotion = MemoryEmotion.happy;
   bool _isLoading = false;
+  bool _checkingEligibility = true;
+  bool _canAddToday = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkEligibility();
+  }
 
   @override
   void dispose() {
     _contentController.dispose();
     super.dispose();
+  }
+
+  Future<void> _checkEligibility() async {
+    final user = ref.read(authServiceProvider).currentUser;
+    if (user == null) return;
+
+    final canAdd = await _memoryService.canAddMemoryToday(
+      widget.villageId,
+      user.uid,
+    );
+
+    if (mounted) {
+      setState(() {
+        _canAddToday = canAdd;
+        _checkingEligibility = false;
+      });
+
+      if (!canAdd) {
+        _showSnackBar(
+          'You\'ve already added a memory today! 💚\nCome back tomorrow to share more moments.',
+          isError: true,
+        );
+        await Future.delayed(const Duration(seconds: 2));
+        if (mounted) Navigator.pop(context);
+      }
+    }
   }
 
   Future<void> _handleAddMemory() async {
@@ -33,13 +68,25 @@ class _AddMemoryScreenState extends ConsumerState<AddMemoryScreen> {
       return;
     }
 
+    if (_contentController.text.trim().length < 10) {
+      _showSnackBar(
+        'Please write at least 10 characters',
+        isError: true,
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     final user = ref.read(authServiceProvider).currentUser;
-    if (user == null) return;
+    if (user == null) {
+      setState(() => _isLoading = false);
+      _showSnackBar('Please login to add memories', isError: true);
+      return;
+    }
 
-    final result = await TreeService().addMemory(
-      coupleId: widget.coupleId,
+    final result = await _memoryService.addMemory(
+      villageId: widget.villageId,
       userId: user.uid,
       userName: user.displayName ?? 'You',
       content: _contentController.text.trim(),
@@ -48,15 +95,16 @@ class _AddMemoryScreenState extends ConsumerState<AddMemoryScreen> {
 
     if (!mounted) return;
 
-    if (result['success']) {
-      _showSnackBar(result['message'], isError: false);
-      await Future.delayed(const Duration(milliseconds: 500));
+    setState(() => _isLoading = false);
+
+    if (result.success) {
+      _showSnackBar(result.message, isError: false);
+      await Future.delayed(const Duration(milliseconds: 800));
       if (mounted) {
-        Navigator.pop(context);
+        Navigator.pop(context, true); // Return true to indicate success
       }
     } else {
-      setState(() => _isLoading = false);
-      _showSnackBar(result['message'], isError: true);
+      _showSnackBar(result.message, isError: true);
     }
   }
 
@@ -66,12 +114,48 @@ class _AddMemoryScreenState extends ConsumerState<AddMemoryScreen> {
         content: Text(message),
         backgroundColor: isError ? Colors.red.shade400 : Colors.green.shade400,
         behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: isError ? 3 : 2),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_checkingEligibility) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(
+                color: Color(0xFF6B9B78),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Checking eligibility...',
+                style: TextStyle(
+                  color: Colors.grey.shade600,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (!_canAddToday) {
+      return const Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
+          child: CircularProgressIndicator(
+            color: Color(0xFF6B9B78),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -79,7 +163,7 @@ class _AddMemoryScreenState extends ConsumerState<AddMemoryScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.close, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
+          onPressed: _isLoading ? null : () => Navigator.pop(context),
         ),
         title: const Text(
           'Add Memory',
@@ -94,6 +178,39 @@ class _AddMemoryScreenState extends ConsumerState<AddMemoryScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Daily reminder banner
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF6B9B78).withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: const Color(0xFF6B9B78).withValues(alpha: 0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.info_outline,
+                    color: Color(0xFF4A7C59),
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'You can add one memory per day',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade700,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
             // Emotion selector
             const Text(
               'How are you feeling?',
@@ -125,6 +242,10 @@ class _AddMemoryScreenState extends ConsumerState<AddMemoryScreen> {
               decoration: InputDecoration(
                 hintText:
                     'Share this special moment...\n\nExample: "We went to the beach today and watched the sunset together. It was magical! ❤️"',
+                hintStyle: TextStyle(
+                  color: Colors.grey.shade400,
+                  fontSize: 14,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
                   borderSide: BorderSide(color: Colors.grey.shade300),
@@ -146,7 +267,7 @@ class _AddMemoryScreenState extends ConsumerState<AddMemoryScreen> {
             ),
             const SizedBox(height: 24),
 
-            // Info box
+            // Emotion info box
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -182,6 +303,7 @@ class _AddMemoryScreenState extends ConsumerState<AddMemoryScreen> {
                 onPressed: _isLoading ? null : _handleAddMemory,
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF6B9B78),
+                  disabledBackgroundColor: Colors.grey.shade300,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -217,7 +339,9 @@ class _AddMemoryScreenState extends ConsumerState<AddMemoryScreen> {
       children: MemoryEmotion.values.map((emotion) {
         final isSelected = _selectedEmotion == emotion;
         return GestureDetector(
-          onTap: () => setState(() => _selectedEmotion = emotion),
+          onTap: _isLoading
+              ? null
+              : () => setState(() => _selectedEmotion = emotion),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -242,7 +366,7 @@ class _AddMemoryScreenState extends ConsumerState<AddMemoryScreen> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  emotion.displayName,
+                  emotion.name.toUpperCase(),
                   style: TextStyle(
                     color: isSelected ? Colors.white : Colors.black87,
                     fontWeight: isSelected
@@ -261,22 +385,22 @@ class _AddMemoryScreenState extends ConsumerState<AddMemoryScreen> {
 
   String _getEmotionDescription(MemoryEmotion emotion) {
     switch (emotion) {
-      case MemoryEmotion.happy:
-        return 'This memory will add a beautiful flower to your tree! +6 growth';
-      case MemoryEmotion.excited:
-        return 'A bird will perch on your tree! +6 growth';
-      case MemoryEmotion.joyful:
-        return 'Your tree will bear a delicious fruit! +7 growth';
-      case MemoryEmotion.grateful:
-        return 'A shining star will light up your tree! +5 growth';
       case MemoryEmotion.love:
-        return 'A heart will bloom on your tree! +8 growth (Maximum!)';
-      case MemoryEmotion.sad:
-        return 'Even rain helps trees grow. Your tree will understand. +1 growth';
-      case MemoryEmotion.nostalgic:
-        return 'A butterfly will visit your tree! +3 growth';
+        return 'A heart will bloom on your tree! +8 growth, +10 love points (Maximum!)';
+      case MemoryEmotion.joyful:
+        return 'Your tree will bear a delicious fruit! +7 growth, +8 love points';
+      case MemoryEmotion.happy:
+        return 'This memory will add a beautiful flower to your tree! +6 growth, +6 love points';
+      case MemoryEmotion.excited:
+        return 'A bird will perch on your tree! +6 growth, +6 love points';
+      case MemoryEmotion.grateful:
+        return 'A shining star will light up your tree! +5 growth, +5 love points';
       case MemoryEmotion.peaceful:
-        return 'A gentle leaf will appear! +4 growth';
+        return 'A gentle leaf will appear! +4 growth, +4 love points';
+      case MemoryEmotion.nostalgic:
+        return 'A butterfly will visit your tree! +3 growth, +3 love points';
+      case MemoryEmotion.sad:
+        return 'Even rain helps trees grow. Your tree will understand. +1 growth, +2 love points';
     }
   }
 }

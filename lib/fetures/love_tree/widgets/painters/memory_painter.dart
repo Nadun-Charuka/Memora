@@ -2,7 +2,8 @@
 
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:memora/models/tree_model.dart';
+import 'package:memora/fetures/love_tree/model/tree_model.dart';
+import 'package:memora/fetures/memo/model/memory_model.dart';
 
 class MemoryPainter {
   final Animation<double> animation;

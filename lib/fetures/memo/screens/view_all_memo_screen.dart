@@ -2,17 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:memora/fetures/auth/provider/auth_provider.dart';
-import 'package:memora/fetures/love_tree/services/tree_service.dart';
+import 'package:memora/fetures/love_tree/model/tree_model.dart';
+import 'package:memora/fetures/memo/model/memory_model.dart';
 import 'package:memora/fetures/memo/screens/memo_details_screen.dart';
-import 'package:memora/models/tree_model.dart';
+import 'package:memora/fetures/memo/service/memory_service.dart';
 
 class MemoryListScreen extends ConsumerStatefulWidget {
-  final String coupleId;
+  final String villageId;
   final LoveTree tree;
 
   const MemoryListScreen({
     super.key,
-    required this.coupleId,
+    required this.villageId,
     required this.tree,
   });
 
@@ -21,6 +22,7 @@ class MemoryListScreen extends ConsumerStatefulWidget {
 }
 
 class _MemoryListScreenState extends ConsumerState<MemoryListScreen> {
+  final _memoryService = MemoryService();
   String _filterOption = 'all'; // all, mine, partner
 
   @override
@@ -30,7 +32,7 @@ class _MemoryListScreenState extends ConsumerState<MemoryListScreen> {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF9B85C0),
+        backgroundColor: const Color(0xFF6B9B78),
         foregroundColor: Colors.white,
         elevation: 0,
         title: Column(
@@ -44,7 +46,7 @@ class _MemoryListScreenState extends ConsumerState<MemoryListScreen> {
               ),
             ),
             Text(
-              widget.tree.name,
+              '${widget.tree.name} • ${widget.tree.memoryCount}/${LoveTree.MAX_MEMORIES}',
               style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.normal,
@@ -53,6 +55,24 @@ class _MemoryListScreenState extends ConsumerState<MemoryListScreen> {
           ],
         ),
         actions: [
+          // Tree stage indicator
+          Center(
+            child: Container(
+              margin: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                widget.tree.stage.displayName,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.filter_list),
             onSelected: (value) {
@@ -94,7 +114,10 @@ class _MemoryListScreenState extends ConsumerState<MemoryListScreen> {
         ],
       ),
       body: StreamBuilder<List<Memory>>(
-        stream: TreeService().getMemoriesStream(widget.coupleId),
+        stream: _memoryService.getMemoriesStream(
+          widget.villageId,
+          widget.tree.id,
+        ),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
@@ -121,6 +144,15 @@ class _MemoryListScreenState extends ConsumerState<MemoryListScreen> {
                       fontSize: 16,
                       color: Colors.grey.shade700,
                     ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    snapshot.error.toString(),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade500,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
                 ],
               ),
@@ -156,7 +188,9 @@ class _MemoryListScreenState extends ConsumerState<MemoryListScreen> {
                         ? 'You haven\'t added any memories yet'
                         : _filterOption == 'partner'
                         ? 'Your partner hasn\'t added any memories yet'
-                        : 'No memories yet',
+                        : widget.tree.isPlanted
+                        ? 'No memories yet'
+                        : 'Tree not planted yet',
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.grey.shade600,
@@ -164,7 +198,9 @@ class _MemoryListScreenState extends ConsumerState<MemoryListScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Start creating beautiful moments together!',
+                    widget.tree.isPlanted
+                        ? 'Start creating beautiful moments together!'
+                        : 'Both partners need to plant the tree first',
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey.shade500,
@@ -178,39 +214,183 @@ class _MemoryListScreenState extends ConsumerState<MemoryListScreen> {
           // Group memories by date
           final groupedMemories = _groupMemoriesByDate(memories);
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: groupedMemories.length,
-            itemBuilder: (context, index) {
-              final dateKey = groupedMemories.keys.elementAt(index);
-              final dateMemories = groupedMemories[dateKey]!;
-
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Date header
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Text(
-                      _formatDateHeader(dateKey),
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey.shade700,
-                      ),
+          return Column(
+            children: [
+              // Tree progress indicator
+              if (!widget.tree.isCompleted)
+                Container(
+                  margin: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFF6B9B78).withValues(alpha: 0.1),
+                        const Color(0xFF6B9B78).withValues(alpha: 0.05),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: const Color(0xFF6B9B78).withValues(alpha: 0.3),
                     ),
                   ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Tree Progress',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey.shade700,
+                            ),
+                          ),
+                          Text(
+                            '${widget.tree.memoryCount}/${LoveTree.MAX_MEMORIES}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF6B9B78),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: LinearProgressIndicator(
+                          value: widget.tree.stageProgress,
+                          backgroundColor: Colors.grey.shade200,
+                          color: const Color(0xFF6B9B78),
+                          minHeight: 8,
+                        ),
+                      ),
+                      if (widget.tree.remainingMemories <= 10)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Text(
+                            '${widget.tree.remainingMemories} more to complete! 🎉',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
 
-                  // Memories for this date
-                  ...dateMemories.map((memory) {
-                    final isMyMemory = currentUser?.uid == memory.addedBy;
-                    return _buildMemoryCard(memory, isMyMemory);
-                  }),
+              // Tree completed banner
+              if (widget.tree.isCompleted)
+                Container(
+                  margin: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.amber.shade100,
+                        Colors.amber.shade50,
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.amber.shade300),
+                  ),
+                  child: Row(
+                    children: [
+                      const Text('🎉', style: TextStyle(fontSize: 32)),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Tree Completed!',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF4A7C59),
+                              ),
+                            ),
+                            Text(
+                              widget.tree.completedAt != null
+                                  ? 'Completed on ${DateFormat('MMM d, yyyy').format(widget.tree.completedAt!)}'
+                                  : 'All 60 memories collected!',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
 
-                  const SizedBox(height: 8),
-                ],
-              );
-            },
+              // Memory list
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.only(
+                    left: 16,
+                    right: 16,
+                    bottom: 16,
+                  ),
+                  itemCount: groupedMemories.length,
+                  itemBuilder: (context, index) {
+                    final dateKey = groupedMemories.keys.elementAt(index);
+                    final dateMemories = groupedMemories[dateKey]!;
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Date header
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 4,
+                                height: 20,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF6B9B78),
+                                  borderRadius: BorderRadius.circular(2),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                _formatDateHeader(dateKey),
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey.shade700,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Container(
+                                  height: 1,
+                                  color: Colors.grey.shade300,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Memories for this date
+                        ...dateMemories.map((memory) {
+                          final isMyMemory = currentUser?.uid == memory.addedBy;
+                          return _buildMemoryCard(memory, isMyMemory);
+                        }),
+
+                        const SizedBox(height: 8),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ],
           );
         },
       ),
@@ -225,7 +405,8 @@ class _MemoryListScreenState extends ConsumerState<MemoryListScreen> {
           MaterialPageRoute(
             builder: (context) => MemoryDetailScreen(
               memory: memory,
-              coupleId: widget.coupleId,
+              villageId: widget.villageId,
+              treeId: widget.tree.id,
               isMyMemory: isMyMemory,
             ),
           ),
@@ -236,6 +417,12 @@ class _MemoryListScreenState extends ConsumerState<MemoryListScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isMyMemory
+                ? const Color(0xFF6B9B78).withValues(alpha: 0.2)
+                : const Color(0xFF9B85C0).withValues(alpha: 0.2),
+            width: 2,
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.05),
@@ -337,7 +524,7 @@ class _MemoryListScreenState extends ConsumerState<MemoryListScreen> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      memory.emotion.displayName,
+                      memory.emotion.name.toUpperCase(),
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -377,6 +564,18 @@ class _MemoryListScreenState extends ConsumerState<MemoryListScreen> {
                         color: Colors.grey.shade200,
                         child: const Center(
                           child: Icon(Icons.image_not_supported),
+                        ),
+                      );
+                    },
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Container(
+                        height: 150,
+                        color: Colors.grey.shade200,
+                        child: const Center(
+                          child: CircularProgressIndicator(
+                            color: Color(0xFF6B9B78),
+                          ),
                         ),
                       );
                     },

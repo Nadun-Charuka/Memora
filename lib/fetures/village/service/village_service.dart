@@ -1,10 +1,13 @@
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:memora/fetures/village/model/village_model.dart';
+import 'package:memora/fetures/love_tree/services/tree_service.dart';
 
 class VillageService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final TreeService _treeService = TreeService();
 
-  // Generate a unique 6-character invite code
+  // Generate unique invite code
   String _generateInviteCode() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     final random = Random();
@@ -16,8 +19,8 @@ class VillageService {
     );
   }
 
-  // Create a new village/couple
-  Future<Map<String, dynamic>> createVillage({
+  /// Create a new village with an UNPLANTED tree
+  Future<VillageResult> createVillage({
     required String userId,
     required String userName,
     required String villageName,
@@ -28,252 +31,207 @@ class VillageService {
       String inviteCode;
       bool codeExists = true;
 
-      // Ensure code is unique
       do {
         inviteCode = _generateInviteCode();
         final existing = await _firestore
-            .collection('couples')
+            .collection('villages')
             .where('inviteCode', isEqualTo: inviteCode)
             .get();
         codeExists = existing.docs.isNotEmpty;
       } while (codeExists);
 
-      // Create couple document
-      final coupleRef = _firestore.collection('couples').doc();
+      // Create village document
+      final villageRef = _firestore.collection('villages').doc();
+      final village = Village(
+        id: villageRef.id,
+        name: villageName,
+        partner1Id: userId,
+        partner1Name: userName,
+        partner2Name: partnerName,
+        inviteCode: inviteCode,
+        status: VillageStatus.pending,
+        createdAt: DateTime.now(),
+        totalLovePoints: 0,
+        currentStreak: 0,
+        lastInteraction: DateTime.now(),
+      );
 
-      await coupleRef.set({
-        'coupleId': coupleRef.id,
-        'villageName': villageName,
-        'partner1Id': userId,
-        'partner1Name': userName,
-        'partner2Id': null,
-        'partner2Name': partnerName,
-        'inviteCode': inviteCode,
-        'status': 'pending', // pending, active
-        'createdAt': FieldValue.serverTimestamp(),
-        'totalLovePoints': 0,
-        'currentStreak': 0,
-        'lastInteraction': FieldValue.serverTimestamp(),
-      });
+      await villageRef.set(village.toFirestore());
 
-      // Update user document with coupleId
+      // Update user document
       await _firestore.collection('users').doc(userId).update({
-        'coupleId': coupleRef.id,
+        'villageId': villageRef.id,
         'role': 'creator',
       });
 
-      // Create first tree for current month
-      await _createMonthlyTree(coupleRef.id);
+      // ✨ CREATE UNPLANTED TREE
+      // The tree exists in the database, but isPlanted: false
+      // Both partners must press "Plant Tree" to activate it
+      // This preserves the emotional moment of starting together! 🌱
+      await _treeService.createMonthlyTree(villageRef.id);
 
-      return {
-        'success': true,
-        'coupleId': coupleRef.id,
-        'inviteCode': inviteCode,
-        'message': 'Village created successfully!',
-      };
+      return VillageResult(
+        success: true,
+        villageId: villageRef.id,
+        inviteCode: inviteCode,
+        message: 'Village created successfully!',
+      );
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Failed to create village: ${e.toString()}',
-      };
+      return VillageResult(
+        success: false,
+        message: 'Failed to create village: ${e.toString()}',
+      );
     }
   }
 
-  // Join existing village with invite code
-  Future<Map<String, dynamic>> joinVillage({
+  /// Join existing village with invite code
+  Future<VillageResult> joinVillage({
     required String userId,
     required String userName,
     required String inviteCode,
   }) async {
     try {
-      // Find couple with invite code
-      final coupleQuery = await _firestore
-          .collection('couples')
+      final villageQuery = await _firestore
+          .collection('villages')
           .where('inviteCode', isEqualTo: inviteCode)
           .limit(1)
           .get();
 
-      if (coupleQuery.docs.isEmpty) {
-        return {
-          'success': false,
-          'message': 'Invalid invite code. Please check and try again.',
-        };
+      if (villageQuery.docs.isEmpty) {
+        return VillageResult(
+          success: false,
+          message: 'Invalid invite code. Please check and try again.',
+        );
       }
 
-      final coupleDoc = coupleQuery.docs.first;
-      final coupleData = coupleDoc.data();
+      final villageDoc = villageQuery.docs.first;
+      final villageData = villageDoc.data();
 
-      // Check if village is already complete
-      if (coupleData['partner2Id'] != null) {
-        return {
-          'success': false,
-          'message': 'This village is already complete.',
-        };
+      if (villageData['partner2Id'] != null) {
+        return VillageResult(
+          success: false,
+          message: 'This village is already complete.',
+        );
       }
 
-      // Check if user is trying to join their own village
-      if (coupleData['partner1Id'] == userId) {
-        return {
-          'success': false,
-          'message': 'You cannot join your own village.',
-        };
+      if (villageData['partner1Id'] == userId) {
+        return VillageResult(
+          success: false,
+          message: 'You cannot join your own village.',
+        );
       }
 
-      // Update couple document with partner 2
-      await coupleDoc.reference.update({
+      // Update village with partner 2
+      await villageDoc.reference.update({
         'partner2Id': userId,
         'partner2Name': userName,
-        'status': 'active',
+        'status': VillageStatus.active.value,
         'joinedAt': FieldValue.serverTimestamp(),
       });
 
-      // Update user document with coupleId
+      // Update user document
       await _firestore.collection('users').doc(userId).update({
-        'coupleId': coupleDoc.id,
+        'villageId': villageDoc.id,
         'role': 'joiner',
       });
 
-      return {
-        'success': true,
-        'coupleId': coupleDoc.id,
-        'message': 'Successfully joined the village!',
-      };
-    } catch (e) {
-      return {
-        'success': false,
-        'message': 'Failed to join village: ${e.toString()}',
-      };
-    }
-  }
-
-  // Create initial tree for the current month
-  Future<void> _createMonthlyTree(String coupleId) async {
-    final now = DateTime.now();
-    final monthKey = '${now.year}_${now.month.toString().padLeft(2, '0')}';
-
-    await _firestore
-        .collection('couples')
-        .doc(coupleId)
-        .collection('trees')
-        .doc(monthKey)
-        .set({
-          'treeId': monthKey,
-          'name': _getMonthTreeName(now.month),
-          'type': _getMonthTreeType(now.month),
-          'level': 1,
-          'height': 10.0,
-          'happiness': 1.0,
-          'health': 1.0,
-          'lovePoints': 0,
-          'createdAt': FieldValue.serverTimestamp(),
-          'lastInteraction': FieldValue.serverTimestamp(),
-          'stage': 'notPlanted',
-          'memoryCount': 0,
-          'isPlanted': false,
-          'plantedBy': [], // Track who has planted
-        });
-  }
-
-  // Get month-specific tree name
-  String _getMonthTreeName(int month) {
-    const names = [
-      'January Seeds',
-      'February Blooms',
-      'March Growth',
-      'April Sunshine',
-      'May Flowers',
-      'June Dreams',
-      'July Warmth',
-      'August Radiance',
-      'September Harvest',
-      'October Colors',
-      'November Reflection',
-      'December Magic',
-    ];
-    return names[month - 1];
-  }
-
-  // Get month-specific tree type
-  String _getMonthTreeType(int month) {
-    const types = [
-      'PineTree',
-      'CherryBlossom',
-      'MapleTree',
-      'SakuraTree',
-      'OakTree',
-      'WillowTree',
-      'BirchTree',
-      'PalmTree',
-      'AppleTree',
-      'AutumnTree',
-      'CypressTree',
-      'EvergreenTree',
-    ];
-    return types[month - 1];
-  }
-
-  // Get couple data by user ID
-  Future<Map<String, dynamic>?> getCoupleByUserId(String userId) async {
-    try {
-      final userDoc = await _firestore.collection('users').doc(userId).get();
-      final coupleId = userDoc.data()?['coupleId'];
-
-      if (coupleId == null) return null;
-
-      final coupleDoc = await _firestore
-          .collection('couples')
-          .doc(coupleId)
-          .get();
-
-      if (!coupleDoc.exists) return null;
-
-      return coupleDoc.data();
-    } catch (e) {
-      return null;
-    }
-  }
-
-  // Get current month's tree
-  Future<Map<String, dynamic>?> getCurrentTree(String coupleId) async {
-    try {
-      final now = DateTime.now();
-      final monthKey = '${now.year}_${now.month.toString().padLeft(2, '0')}';
-
+      // ✨ SAFETY CHECK: Ensure tree exists
+      // Usually the tree was created when the village was made,
+      // but we check just in case something went wrong
+      final monthKey = _getCurrentMonthKey();
       final treeDoc = await _firestore
-          .collection('couples')
-          .doc(coupleId)
+          .collection('villages')
+          .doc(villageDoc.id)
           .collection('trees')
           .doc(monthKey)
           .get();
 
       if (!treeDoc.exists) {
-        // Create tree if it doesn't exist
-        await _createMonthlyTree(coupleId);
-        return await getCurrentTree(coupleId);
+        await _treeService.createMonthlyTree(villageDoc.id);
       }
 
-      return treeDoc.data();
+      return VillageResult(
+        success: true,
+        villageId: villageDoc.id,
+        message:
+            'Successfully joined the village! Now both of you can plant the tree together 🌱',
+      );
+    } catch (e) {
+      return VillageResult(
+        success: false,
+        message: 'Failed to join village: ${e.toString()}',
+      );
+    }
+  }
+
+  /// Get village by ID
+  Future<Village?> getVillage(String villageId) async {
+    try {
+      final doc = await _firestore.collection('villages').doc(villageId).get();
+      if (!doc.exists) return null;
+      return Village.fromFirestore(doc.data()!, doc.id);
     } catch (e) {
       return null;
     }
   }
 
-  // Get invite code for a couple
-  Future<String?> getInviteCode(String userId) async {
+  /// Get village stream
+  Stream<Village?> getVillageStream(String villageId) {
+    return _firestore.collection('villages').doc(villageId).snapshots().map((
+      doc,
+    ) {
+      if (!doc.exists) return null;
+      return Village.fromFirestore(doc.data()!, doc.id);
+    });
+  }
+
+  /// Get user's village ID
+  Future<String?> getUserVillageId(String userId) async {
     try {
       final userDoc = await _firestore.collection('users').doc(userId).get();
-      final coupleId = userDoc.data()?['coupleId'];
-
-      if (coupleId == null) return null;
-
-      final coupleDoc = await _firestore
-          .collection('couples')
-          .doc(coupleId)
-          .get();
-
-      return coupleDoc.data()?['inviteCode'];
+      return userDoc.data()?['villageId'];
     } catch (e) {
       return null;
     }
   }
+
+  /// Update village stats (called by TreeService)
+  Future<void> updateVillageStats({
+    required String villageId,
+    int? lovePointsIncrement,
+    int? streakIncrement,
+  }) async {
+    final updates = <String, dynamic>{
+      'lastInteraction': FieldValue.serverTimestamp(),
+    };
+
+    if (lovePointsIncrement != null) {
+      updates['totalLovePoints'] = FieldValue.increment(lovePointsIncrement);
+    }
+
+    if (streakIncrement != null) {
+      updates['currentStreak'] = FieldValue.increment(streakIncrement);
+    }
+
+    await _firestore.collection('villages').doc(villageId).update(updates);
+  }
+
+  String _getCurrentMonthKey() {
+    final now = DateTime.now();
+    return '${now.year}_${now.month.toString().padLeft(2, '0')}';
+  }
+}
+
+class VillageResult {
+  final bool success;
+  final String? villageId;
+  final String? inviteCode;
+  final String message;
+
+  VillageResult({
+    required this.success,
+    this.villageId,
+    this.inviteCode,
+    required this.message,
+  });
 }

@@ -13,6 +13,7 @@ class PairingScreen extends ConsumerStatefulWidget {
 }
 
 class _PairingScreenState extends ConsumerState<PairingScreen> {
+  final VillageService _villageService = VillageService();
   final _villageNameController = TextEditingController();
   final _partnerNameController = TextEditingController();
   final _joinCodeController = TextEditingController();
@@ -44,7 +45,7 @@ class _PairingScreenState extends ConsumerState<PairingScreen> {
       final user = ref.read(authServiceProvider).currentUser;
       if (user == null) throw Exception('User not authenticated');
 
-      final result = await VillageService().createVillage(
+      final result = await _villageService.createVillage(
         userId: user.uid,
         userName: user.displayName ?? 'User',
         villageName: _villageNameController.text.trim(),
@@ -53,14 +54,10 @@ class _PairingScreenState extends ConsumerState<PairingScreen> {
 
       if (!mounted) return;
 
-      if (result['success']) {
-        final inviteCode = result['inviteCode'];
-        _showInviteCodeDialog(inviteCode);
+      if (result.success) {
+        _showInviteCodeDialog(result.inviteCode!);
       } else {
-        _showSnackBar(
-          result['message'] ?? 'Failed to create village',
-          isError: true,
-        );
+        _showSnackBar(result.message, isError: true);
       }
     } catch (e) {
       if (mounted) {
@@ -85,7 +82,7 @@ class _PairingScreenState extends ConsumerState<PairingScreen> {
       final user = ref.read(authServiceProvider).currentUser;
       if (user == null) throw Exception('User not authenticated');
 
-      final result = await VillageService().joinVillage(
+      final result = await _villageService.joinVillage(
         userId: user.uid,
         userName: user.displayName ?? 'User',
         inviteCode: _joinCodeController.text.trim().toUpperCase(),
@@ -93,7 +90,7 @@ class _PairingScreenState extends ConsumerState<PairingScreen> {
 
       if (!mounted) return;
 
-      if (result['success']) {
+      if (result.success) {
         _showSnackBar('Successfully joined the village!', isError: false);
         await Future.delayed(const Duration(milliseconds: 500));
 
@@ -103,10 +100,7 @@ class _PairingScreenState extends ConsumerState<PairingScreen> {
           );
         }
       } else {
-        _showSnackBar(
-          result['message'] ?? 'Failed to join village',
-          isError: true,
-        );
+        _showSnackBar(result.message, isError: true);
       }
     } catch (e) {
       if (mounted) {

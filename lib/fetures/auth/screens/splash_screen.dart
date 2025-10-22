@@ -57,7 +57,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       nextScreen = const LoginScreen();
     } else {
       // Logged in - check if user has a couple/village
-      final hasCouple = await authService.hasCouple();
+      final hasCouple = await authService.hasVillage();
 
       if (hasCouple) {
         // Has couple - go to home screen

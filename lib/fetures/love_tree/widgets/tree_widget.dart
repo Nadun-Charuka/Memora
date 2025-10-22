@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:memora/fetures/love_tree/model/tree_model.dart';
 import 'package:memora/fetures/love_tree/widgets/tree_painter.dart';
-import 'package:memora/models/tree_model.dart';
+import 'package:memora/fetures/memo/model/memory_model.dart';
 
 class TreeWidget extends StatefulWidget {
   final LoveTree tree;
@@ -57,35 +58,33 @@ class _TreeWidgetState extends State<TreeWidget> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          // Full screen tree canvas (no GestureDetector wrapping to avoid blocking interactions)
-          Positioned.fill(
-            child: CustomPaint(
-              size: Size.infinite,
-              painter: TreePainter(
-                tree: widget.tree,
-                memories: widget.memories,
-                animation: _animationController,
-              ),
+    return Stack(
+      children: [
+        // Full screen tree canvas (no GestureDetector wrapping to avoid blocking interactions)
+        Positioned.fill(
+          child: CustomPaint(
+            size: Size.infinite,
+            painter: TreePainter(
+              tree: widget.tree,
+              memories: widget.memories,
+              animation: _animationController,
             ),
           ),
+        ),
 
-          // Compact tree info at bottom
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: AnimatedBuilder(
-              animation: _cardAnimationController,
-              builder: (context, child) {
-                return _buildTreeInfo();
-              },
-            ),
+        // Compact tree info at bottom
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: AnimatedBuilder(
+            animation: _cardAnimationController,
+            builder: (context, child) {
+              return _buildTreeInfo();
+            },
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -159,25 +158,24 @@ class _TreeWidgetState extends State<TreeWidget> with TickerProviderStateMixin {
                 ),
                 Row(
                   children: [
-                    const SizedBox(width: 12),
-                    // Quick stats when collapsed
+                    const SizedBox(width: 16),
                     AnimatedRotation(
                       turns: _isCardExpanded ? 0.5 : 0,
                       duration: const Duration(milliseconds: 300),
-                      child: Icon(
+                      child: const Icon(
                         Icons.keyboard_arrow_up,
-                        color: const Color(0xFF6B9B78),
+                        color: Color(0xFF6B9B78),
                         size: 28,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 80),
+                    // Quick stats when collapsed
                     if (!_isCardExpanded && widget.tree.isPlanted) ...[
-                      _buildMiniStat('💚', (widget.tree.health * 100).toInt()),
-                      const SizedBox(width: 8),
                       _buildMiniStat(
                         '😊',
                         (widget.tree.happiness * 100).toInt(),
                       ),
+                      const SizedBox(width: 8),
                     ],
                   ],
                 ),
@@ -290,7 +288,7 @@ class _TreeWidgetState extends State<TreeWidget> with TickerProviderStateMixin {
                         ),
                       ),
                       Text(
-                        '${(widget.tree.stageProgress * 100).toInt()}%',
+                        '${widget.tree.memoryCount}/${LoveTree.MAX_MEMORIES}',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
@@ -348,22 +346,19 @@ class _TreeWidgetState extends State<TreeWidget> with TickerProviderStateMixin {
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             _buildStat(
-              '💚',
-              'Health',
-              '${(widget.tree.health * 100).toInt()}%',
-              widget.tree.health,
+              '📏',
+              'Height',
+              '${widget.tree.height.toStringAsFixed(1)}m',
             ),
             _buildStat(
               '😊',
               'Happiness',
               '${(widget.tree.happiness * 100).toInt()}%',
-              widget.tree.happiness,
             ),
             _buildStat(
               '💖',
               'Love',
               '${widget.tree.lovePoints}',
-              widget.tree.lovePoints / 1000,
             ),
           ],
         ),
@@ -371,7 +366,7 @@ class _TreeWidgetState extends State<TreeWidget> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildStat(String emoji, String label, String value, double progress) {
+  Widget _buildStat(String emoji, String label, String value) {
     return Column(
       children: [
         // Emoji with background circle
@@ -419,7 +414,7 @@ class _TreeWidgetState extends State<TreeWidget> with TickerProviderStateMixin {
 
   Color _getStatColor(String label) {
     switch (label) {
-      case 'Health':
+      case 'Height':
         return const Color(0xFF4CAF50);
       case 'Happiness':
         return const Color(0xFFFFB74D);
@@ -447,6 +442,9 @@ class _TreeWidgetState extends State<TreeWidget> with TickerProviderStateMixin {
         break;
       case TreeStage.mature:
         icon = '🌳';
+        break;
+      case TreeStage.completed:
+        icon = '🎉';
         break;
     }
 

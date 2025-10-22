@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:memora/models/tree_model.dart';
+import 'package:memora/fetures/love_tree/model/tree_model.dart';
 import 'ground_painter.dart';
 
 // The Abstract Base Class

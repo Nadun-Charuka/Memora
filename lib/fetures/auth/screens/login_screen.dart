@@ -42,7 +42,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     if (success) {
       // Check if user has couple
-      final hasCouple = await ref.read(authServiceProvider).hasCouple();
+      final hasCouple = await ref.read(authServiceProvider).hasVillage();
 
       final nextScreen = hasCouple ? const HomeScreen() : const PairingScreen();
 

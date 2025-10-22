@@ -1,7 +1,8 @@
 // FILE: lib/tree_painter.dart (REPLACE the old code with this)
 
 import 'package:flutter/material.dart';
-import 'package:memora/models/tree_model.dart';
+import 'package:memora/fetures/love_tree/model/tree_model.dart';
+import 'package:memora/fetures/memo/model/memory_model.dart';
 
 import 'painters/memory_painter.dart';
 import 'painters/sky_painter.dart';

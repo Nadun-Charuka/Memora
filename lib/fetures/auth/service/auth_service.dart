@@ -35,7 +35,8 @@ class AuthService {
           'name': name,
           'email': email.trim(),
           'avatar': '',
-          'coupleId': null,
+          'villageId': null, // Changed from 'coupleId'
+          'role': null, // 'creator' or 'joiner'
           'createdAt': FieldValue.serverTimestamp(),
           'lastActive': FieldValue.serverTimestamp(),
         });
@@ -103,15 +104,69 @@ class AuthService {
     }
   }
 
-  // Check if user has a couple/village
-  Future<bool> hasCouple() async {
+  // Check if user has a village (updated from hasCouple)
+  Future<bool> hasVillage() async {
     if (currentUser == null) return false;
 
     final doc = await _firestore
         .collection('users')
         .doc(currentUser!.uid)
         .get();
-    return doc.data()?['coupleId'] != null;
+    return doc.data()?['villageId'] != null;
+  }
+
+  // Get user's village ID
+  Future<String?> getUserVillageId() async {
+    if (currentUser == null) return null;
+
+    final doc = await _firestore
+        .collection('users')
+        .doc(currentUser!.uid)
+        .get();
+    return doc.data()?['villageId'];
+  }
+
+  // Update user profile
+  Future<AuthResult> updateProfile({
+    String? name,
+    String? avatar,
+  }) async {
+    try {
+      if (currentUser == null) {
+        return AuthResult(
+          success: false,
+          message: 'No user logged in',
+        );
+      }
+
+      final updates = <String, dynamic>{};
+
+      if (name != null) {
+        await currentUser!.updateDisplayName(name);
+        updates['name'] = name;
+      }
+
+      if (avatar != null) {
+        updates['avatar'] = avatar;
+      }
+
+      if (updates.isNotEmpty) {
+        await _firestore
+            .collection('users')
+            .doc(currentUser!.uid)
+            .update(updates);
+      }
+
+      return AuthResult(
+        success: true,
+        message: 'Profile updated successfully',
+      );
+    } catch (e) {
+      return AuthResult(
+        success: false,
+        message: 'Failed to update profile: ${e.toString()}',
+      );
+    }
   }
 
   // Handle Firebase Auth errors
@@ -135,6 +190,8 @@ class AuthService {
         return 'Email/password sign in is not enabled.';
       case 'network-request-failed':
         return 'Network error. Check your connection.';
+      case 'invalid-credential':
+        return 'Invalid email or password.';
       default:
         return 'Authentication failed. Please try again.';
     }

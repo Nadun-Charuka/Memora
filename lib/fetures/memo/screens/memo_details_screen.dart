@@ -2,18 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:memora/fetures/auth/provider/auth_provider.dart';
-import 'package:memora/fetures/love_tree/services/tree_service.dart';
-import 'package:memora/models/tree_model.dart';
+import 'package:memora/fetures/memo/model/memory_model.dart';
+import 'package:memora/fetures/memo/service/memory_service.dart';
 
 class MemoryDetailScreen extends ConsumerStatefulWidget {
   final Memory memory;
-  final String coupleId;
+  final String villageId;
+  final String treeId;
   final bool isMyMemory;
 
   const MemoryDetailScreen({
     super.key,
     required this.memory,
-    required this.coupleId,
+    required this.villageId,
+    required this.treeId,
     required this.isMyMemory,
   });
 
@@ -22,6 +24,7 @@ class MemoryDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
+  final MemoryService _memoryService = MemoryService();
   bool _isDeleting = false;
 
   Future<void> _handleDelete() async {
@@ -55,15 +58,16 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
     final user = ref.read(authServiceProvider).currentUser;
     if (user == null) return;
 
-    final result = await TreeService().deleteMemory(
-      coupleId: widget.coupleId,
+    final result = await _memoryService.deleteMemory(
+      villageId: widget.villageId,
+      treeId: widget.treeId,
       memoryId: widget.memory.id,
       userId: user.uid,
     );
 
     if (!mounted) return;
 
-    if (result['success']) {
+    if (result.success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Memory deleted'),
@@ -76,7 +80,7 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
       setState(() => _isDeleting = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(result['message'] ?? 'Failed to delete'),
+          content: Text(result.message),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),
@@ -91,7 +95,7 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
         backgroundColor: _getEmotionColor(widget.memory.emotion),
         foregroundColor: Colors.white,
         elevation: 0,
-        title: Text(widget.memory.emotion.displayName),
+        title: Text(_getEmotionDisplayName(widget.memory.emotion)),
         actions: [
           if (widget.isMyMemory)
             IconButton(
@@ -228,7 +232,7 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                   _buildInfoCard(
                     icon: Icons.emoji_emotions,
                     label: 'Feeling',
-                    value: widget.memory.emotion.displayName,
+                    value: _getEmotionDisplayName(widget.memory.emotion),
                     color: _getEmotionColor(widget.memory.emotion),
                   ),
                   const SizedBox(height: 12),
@@ -346,6 +350,27 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
 
   String _formatFullDateTime(DateTime dateTime) {
     return DateFormat('EEEE, MMMM d, yyyy • h:mm a').format(dateTime);
+  }
+
+  String _getEmotionDisplayName(MemoryEmotion emotion) {
+    switch (emotion) {
+      case MemoryEmotion.love:
+        return 'Love';
+      case MemoryEmotion.happy:
+        return 'Happy';
+      case MemoryEmotion.joyful:
+        return 'Joyful';
+      case MemoryEmotion.excited:
+        return 'Excited';
+      case MemoryEmotion.grateful:
+        return 'Grateful';
+      case MemoryEmotion.peaceful:
+        return 'Peaceful';
+      case MemoryEmotion.nostalgic:
+        return 'Nostalgic';
+      case MemoryEmotion.sad:
+        return 'Sad';
+    }
   }
 
   Color _getEmotionColor(MemoryEmotion emotion) {
