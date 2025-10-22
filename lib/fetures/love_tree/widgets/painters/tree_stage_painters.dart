@@ -560,6 +560,8 @@ class BloomingPainter extends TreeStagePainter {
   }
 }
 
+// 5. Mature State - Mature tree with lots of branches
+
 class MaturePainter extends TreeStagePainter {
   MaturePainter({required super.animation, required super.tree});
 
@@ -602,9 +604,6 @@ class MaturePainter extends TreeStagePainter {
   }
 }
 
-// --- NEW ADVANCED HELPER FUNCTIONS ---
-
-// MODIFIED: Added 'Animation<double> animation' parameter
 void _drawRealisticTrunk(
   Canvas canvas,
   double centerX,
@@ -663,7 +662,6 @@ void _drawRealisticTrunk(
   }
 }
 
-// MODIFIED: Added 'Animation<double> animation' parameter
 void _drawRealisticBranch(
   Canvas canvas,
   Offset start,
@@ -705,7 +703,6 @@ void _drawRealisticBranch(
 
   canvas.drawPath(branchPath, paint);
 
-  // MODIFIED: Pass 'animation' into the helper function
   _drawNaturalLeafCluster(canvas, endPoint, 5, 12, angle, animation);
 
   if (depth > 1) {
@@ -718,7 +715,7 @@ void _drawRealisticBranch(
       lerpDouble(start.dx, endPoint.dx, 0.6)!,
       lerpDouble(start.dy, endPoint.dy, 0.6)!,
     );
-    // MODIFIED: Pass 'animation' into the recursive call
+
     _drawRealisticBranch(
       canvas,
       subBranchStart,
@@ -761,7 +758,6 @@ void _drawDetailedLeaf(
   canvas.restore();
 }
 
-// MODIFIED: Added 'Animation<double> animation' parameter
 void _drawNaturalLeafCluster(
   Canvas canvas,
   Offset center,
@@ -790,3 +786,6 @@ void _drawNaturalLeafCluster(
     );
   }
 }
+
+
+// 6. completed State - Mature tree with advanced

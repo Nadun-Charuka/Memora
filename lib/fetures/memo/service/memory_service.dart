@@ -61,7 +61,8 @@ class MemoryService {
       final monthKey = _getCurrentMonthKey();
       final now = DateTime.now();
       final todayStart = DateTime(now.year, now.month, now.day);
-      final todayEnd = todayStart.add(const Duration(days: 1));
+      //for testing purpose we can change this so now user can add memo after 1 minute after adding one memo
+      final todayEnd = todayStart.add(const Duration(minutes: 1));
 
       final todayMemories = await _firestore
           .collection('villages')

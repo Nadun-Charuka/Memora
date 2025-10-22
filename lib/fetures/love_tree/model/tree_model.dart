@@ -43,8 +43,8 @@ class LoveTree {
   final DateTime lastInteraction;
   final DateTime? completedAt; // NEW: Track when tree was completed
 
-  // ignore: constant_identifier_names
-  static const int MAX_MEMORIES = 60; // Tree completion threshold
+  // ignore: constant_identifier_names //this is the max memo for the tree for month for two user
+  static const int MAX_MEMORIES = 5; // Tree completion threshold
 
   LoveTree({
     required this.id,

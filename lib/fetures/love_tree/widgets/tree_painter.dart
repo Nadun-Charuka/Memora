@@ -49,6 +49,10 @@ class TreePainter extends CustomPainter {
            animation: animation,
            tree: tree,
          ),
+         TreeStage.completed: MaturePainter(
+           animation: animation,
+           tree: tree,
+         ),
        },
        super(repaint: animation);
 
