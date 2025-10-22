@@ -128,7 +128,7 @@ class _TreeWidgetState extends State<TreeWidget> with TickerProviderStateMixin {
           children: [
             // Compact header - always visible
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 Row(
                   children: [

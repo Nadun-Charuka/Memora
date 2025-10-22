@@ -1,5 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:memora/fetures/auth/provider/auth_provider.dart';
 import 'package:memora/fetures/love_tree/screens/add_memory_screen.dart';
 import 'package:memora/fetures/love_tree/services/tree_service.dart';
@@ -216,6 +219,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 ],
                               ),
                             ),
+
                             IconButton(
                               icon: const Icon(
                                 Icons.more_vert,
@@ -429,6 +433,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _showOptionsMenu(LoveTree tree) {
+    final user = ref.read(authServiceProvider).currentUser;
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -439,6 +444,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            ListTile(
+              leading: const Icon(Icons.person_2_outlined),
+              title: RichText(
+                text: TextSpan(
+                  style: const TextStyle(color: Colors.black, fontSize: 18),
+                  children: [
+                    const TextSpan(text: 'Account Name: '),
+                    TextSpan(
+                      text: user?.displayName ?? "?",
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+              onTap: () {},
+            ),
             ListTile(
               leading: const Icon(Icons.info_outline),
               title: const Text('About Village'),
@@ -495,7 +516,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildInfoRow('Created', _formatDate(_coupleData?['createdAt'])),
+            _buildInfoRow('Created', formatDate(_coupleData?['createdAt'])),
             _buildInfoRow('Status', _coupleData?['status'] ?? 'Unknown'),
             _buildInfoRow(
               'Love Points',
@@ -533,9 +554,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  String _formatDate(dynamic timestamp) {
-    if (timestamp == null) return 'Unknown';
-    // Simple formatting - you can improve this
-    return timestamp.toString().split(' ')[0];
+  String formatDate(Timestamp? timestamp) {
+    // If the timestamp is null, return a default string
+    if (timestamp == null) return 'No Date';
+
+    // Convert the Firebase Timestamp to a Dart DateTime object
+    DateTime dateTime = timestamp.toDate();
+
+    // Now, format the DateTime object into a readable string
+    // You can change the format string to anything you like
+    // Example: 'MMM d, yyyy hh:mm a' will give you -> Oct 21, 2025 10:50 PM
+    return DateFormat('MMM d, yyyy  •  hh:mm a').format(dateTime);
   }
 }

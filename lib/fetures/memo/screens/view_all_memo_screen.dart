@@ -205,7 +205,7 @@ class _MemoryListScreenState extends ConsumerState<MemoryListScreen> {
                   ...dateMemories.map((memory) {
                     final isMyMemory = currentUser?.uid == memory.addedBy;
                     return _buildMemoryCard(memory, isMyMemory);
-                  }).toList(),
+                  }),
 
                   const SizedBox(height: 8),
                 ],

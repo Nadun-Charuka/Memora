@@ -87,9 +87,6 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _getEmotionColor(
-        widget.memory.emotion,
-      ).withValues(alpha: 0.05),
       appBar: AppBar(
         backgroundColor: _getEmotionColor(widget.memory.emotion),
         foregroundColor: Colors.white,
