@@ -6,12 +6,12 @@ import 'package:memora/fetures/love_tree/model/tree_model.dart';
 import 'package:memora/fetures/memo/model/memory_model.dart';
 
 class MemoryPainter {
-  final Animation<double> animation;
+  final double elapsedTime;
   final LoveTree tree;
   final List<Memory> memories;
 
   MemoryPainter({
-    required this.animation,
+    required this.elapsedTime,
     required this.tree,
     required this.memories,
   });
@@ -140,8 +140,7 @@ class MemoryPainter {
 
     // Speed and position logic
     final birdSpeed = 0.3 + (index * 0.2);
-    final flightProgress =
-        (animation.value * birdSpeed + (index / total)) % 1.0;
+    final flightProgress = (elapsedTime * birdSpeed + (index / total)) % 1.0;
 
     // 2. Calculate the 'x' position based on the direction.
     final double x;
@@ -159,14 +158,14 @@ class MemoryPainter {
         60.0 +
         (index * 35) +
         math.sin(flightProgress * math.pi * 4 + pathVariation) * 20 +
-        math.sin(animation.value * math.pi * 2 + index) * 8;
+        math.sin(elapsedTime * math.pi * 2 + index) * 8;
 
     final baseSize = 18.0;
     final paint = Paint()..style = PaintingStyle.fill;
     canvas.save();
     canvas.translate(x, y);
 
-    final tiltAngle = math.sin(animation.value * math.pi * 2 + index) * 0.1;
+    final tiltAngle = math.sin(elapsedTime * math.pi * 2 + index) * 0.1;
     canvas.rotate(tiltAngle);
 
     // 3. Flip the entire bird drawing if it's flying left.
@@ -176,8 +175,7 @@ class MemoryPainter {
 
     // --- END OF MODIFICATIONS ---
 
-    final wingFlap =
-        math.sin(animation.value * math.pi * 12 + index * 0.5) * 0.6;
+    final wingFlap = math.sin(elapsedTime * math.pi * 12 + index * 0.5) * 0.6;
     final bodyScale = 1.0 + wingFlap.abs() * 0.08;
     canvas.scale(bodyScale, 1.0);
 
@@ -326,8 +324,7 @@ class MemoryPainter {
     final x = (size.width / (total + 1)) * (index + 1);
     final y = 40.0 + (index % 3) * 30;
     final iconSize = 15.0;
-    final twinkle =
-        (math.sin(animation.value * math.pi * 4 + index * 2) + 1) / 2;
+    final twinkle = (math.sin(elapsedTime * math.pi * 4 + index * 2) + 1) / 2;
     final scale = 0.7 + twinkle * 0.6;
     canvas.save();
     canvas.translate(x, y);
@@ -364,7 +361,7 @@ class MemoryPainter {
   void _drawFallingRain(Canvas canvas, Size size, int index, int total) {
     final x = (size.width / (total + 1)) * (index + 1);
     final fallSpeed = 0.5 + (index * 0.15);
-    final fallProgress = (animation.value * fallSpeed) % 1.0;
+    final fallProgress = (elapsedTime * fallSpeed) % 1.0;
     final startY = size.height * 0.1;
     final endY = size.height * 0.85;
     final y = startY + ((endY - startY) * fallProgress);
@@ -425,7 +422,7 @@ class MemoryPainter {
     final x = centerX + math.cos(angle) * radius;
     final y = groundY - trunkHeight * 0.6 + math.sin(angle) * 30;
     final iconSize = 15.0;
-    final swing = math.sin(animation.value * math.pi * 2 + index) * 3;
+    final swing = math.sin(elapsedTime * math.pi * 2 + index) * 3;
     canvas.save();
     canvas.translate(x + swing, y);
     final stemPaint = Paint()
@@ -476,8 +473,7 @@ class MemoryPainter {
       // Random circular orbit around tree
       final random = math.Random(index + 100);
       final orbitSpeed = 0.2 + (random.nextDouble() * 0.3);
-      final orbitProgress =
-          (animation.value * orbitSpeed + (index / total)) % 1.0;
+      final orbitProgress = (elapsedTime * orbitSpeed + (index / total)) % 1.0;
       final angle = orbitProgress * math.pi * 2;
 
       // Wider orbit radius based on tree stage
@@ -545,7 +541,7 @@ class MemoryPainter {
     final paint = Paint()..style = PaintingStyle.fill;
     canvas.save();
     canvas.translate(position.dx, position.dy);
-    final scale = 1.0 + (math.sin(animation.value * math.pi * 2) * 0.1);
+    final scale = 1.0 + (math.sin(elapsedTime * math.pi * 2) * 0.1);
     canvas.scale(scale);
     switch (emotion) {
       case MemoryEmotion.happy:
@@ -592,7 +588,7 @@ class MemoryPainter {
         canvas.drawCircle(Offset.zero, iconSize * 0.08, paint);
         break;
       case MemoryEmotion.love:
-        final heartBeat = 1.0 + math.sin(animation.value * math.pi * 4) * 0.15;
+        final heartBeat = 1.0 + math.sin(elapsedTime * math.pi * 4) * 0.15;
         canvas.scale(heartBeat);
         paint.color = const Color(0xFFFF1493);
         final heartPath = Path()
@@ -615,7 +611,7 @@ class MemoryPainter {
           );
         canvas.drawPath(heartPath, paint);
         paint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.8);
-        final sparkleAngle = animation.value * math.pi * 4;
+        final sparkleAngle = elapsedTime * math.pi * 4;
         for (int i = 0; i < 4; i++) {
           final angle = (i * math.pi / 2) + sparkleAngle;
           final sparkleOffset = Offset(
@@ -626,7 +622,7 @@ class MemoryPainter {
         }
         break;
       case MemoryEmotion.nostalgic:
-        final flutter = math.sin(animation.value * math.pi * 6) * 0.3;
+        final flutter = math.sin(elapsedTime * math.pi * 6) * 0.3;
         paint.color = const Color(0xFFBA55D3);
         canvas.save();
         canvas.rotate(flutter);
@@ -685,7 +681,7 @@ class MemoryPainter {
         paint.style = PaintingStyle.fill;
         break;
       case MemoryEmotion.peaceful:
-        final leafSway = math.sin(animation.value * math.pi * 2) * 0.2;
+        final leafSway = math.sin(elapsedTime * math.pi * 2) * 0.2;
         canvas.rotate(leafSway);
         paint.color = const Color(0xFF4A7C59);
         final leafPath = Path()

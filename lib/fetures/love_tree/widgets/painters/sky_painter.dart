@@ -4,9 +4,68 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 class SkyPainter {
-  final Animation<double> animation;
+  final double elapsedTime; // CHANGED from Animation<double>
+  late final List<CloudData> clouds;
 
-  SkyPainter({required this.animation});
+  SkyPainter({required this.elapsedTime}) {
+    // CHANGED
+    clouds = [
+      CloudData(
+        baseSpeed: 25,
+        yPosition: 0.08,
+        scale: 1.2,
+        opacity: 0.9,
+        verticalFloat: 8,
+        floatSpeed: 0.4,
+        phaseOffset: 0,
+      ),
+      CloudData(
+        baseSpeed: 40,
+        yPosition: 0.25,
+        scale: 0.85,
+        opacity: 0.75,
+        verticalFloat: 12,
+        floatSpeed: 0.6,
+        phaseOffset: 2.5,
+      ),
+      CloudData(
+        baseSpeed: 18,
+        yPosition: 0.15,
+        scale: 1.0,
+        opacity: 0.8,
+        verticalFloat: 10,
+        floatSpeed: 0.5,
+        phaseOffset: 4.2,
+      ),
+      CloudData(
+        baseSpeed: 55,
+        yPosition: 0.35,
+        scale: 0.7,
+        opacity: 0.65,
+        verticalFloat: 15,
+        floatSpeed: 0.8,
+        phaseOffset: 1.3,
+      ),
+      CloudData(
+        baseSpeed: 32,
+        yPosition: 0.12,
+        scale: 1.1,
+        opacity: 0.85,
+        verticalFloat: 9,
+        floatSpeed: 0.45,
+        phaseOffset: 3.7,
+      ),
+      CloudData(
+        baseSpeed: 70,
+        yPosition: 0.28,
+        scale: 0.6,
+        opacity: 0.6,
+        verticalFloat: 18,
+        floatSpeed: 1.0,
+        phaseOffset: 5.1,
+      ),
+    ];
+  }
 
   void paint(Canvas canvas, Size size) {
     _drawSkyGradient(canvas, size);
@@ -34,32 +93,31 @@ class SkyPainter {
   }
 
   void _drawClouds(Canvas canvas, Size size) {
-    final cloudPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.7)
-      ..style = PaintingStyle.fill;
+    const cloudWidth = 100.0;
+    final totalDistance = size.width + cloudWidth * 2;
 
-    // Cloud 1 - slow, high altitude
-    final cloud1X = (animation.value * 50) % (size.width + 300) - 150;
-    final cloud1Y = 40 + math.sin(animation.value * 0.5) * 10;
-    _drawCloud(canvas, Offset(cloud1X, cloud1Y), cloudPaint, 1.0);
+    for (int i = 0; i < clouds.length; i++) {
+      final cloud = clouds[i];
 
-    // Cloud 2 - medium speed, mid altitude
-    final cloud2X =
-        (animation.value * 80 + size.width * 0.3) % (size.width + 300) - 150;
-    final cloud2Y = 90 + math.sin(animation.value * 0.7 + 1) * 15;
-    _drawCloud(canvas, Offset(cloud2X, cloud2Y), cloudPaint, 0.8);
+      // CHANGED: Use elapsedTime instead of animation.value
+      final rawProgress =
+          (elapsedTime * cloud.baseSpeed +
+              totalDistance * (i / clouds.length)) %
+          totalDistance;
+      final xPos = rawProgress - cloudWidth;
 
-    // Cloud 3 - faster, lower altitude
-    final cloud3X =
-        (animation.value * 120 + size.width * 0.6) % (size.width + 300) - 150;
-    final cloud3Y = 60 + math.sin(animation.value * 0.9 + 2) * 12;
-    _drawCloud(canvas, Offset(cloud3X, cloud3Y), cloudPaint, 1.2);
+      // CHANGED: Use elapsedTime for vertical floating
+      final yPos =
+          size.height * cloud.yPosition +
+          math.sin(elapsedTime * cloud.floatSpeed + cloud.phaseOffset) *
+              cloud.verticalFloat;
 
-    // Cloud 4 - very slow, drifting
-    final cloud4X =
-        (animation.value * 30 + size.width * 0.15) % (size.width + 300) - 150;
-    final cloud4Y = 110 + math.sin(animation.value * 0.3 + 3) * 8;
-    _drawCloud(canvas, Offset(cloud4X, cloud4Y), cloudPaint, 0.9);
+      final cloudPaint = Paint()
+        ..color = Colors.white.withValues(alpha: cloud.opacity)
+        ..style = PaintingStyle.fill;
+
+      _drawCloud(canvas, Offset(xPos, yPos), cloudPaint, cloud.scale);
+    }
   }
 
   void _drawCloud(Canvas canvas, Offset position, Paint paint, double scale) {
@@ -67,12 +125,34 @@ class SkyPainter {
     canvas.translate(position.dx, position.dy);
     canvas.scale(scale);
 
-    canvas.drawCircle(Offset.zero, 20, paint);
-    canvas.drawCircle(Offset(15, -5), 25, paint);
-    canvas.drawCircle(Offset(30, 0), 20, paint);
-    canvas.drawCircle(Offset(20, 5), 22, paint);
-    canvas.drawCircle(Offset(-10, 2), 18, paint);
+    canvas.drawCircle(const Offset(-12, 3), 18, paint);
+    canvas.drawCircle(const Offset(0, -2), 22, paint);
+    canvas.drawCircle(const Offset(15, -8), 26, paint);
+    canvas.drawCircle(const Offset(32, -3), 23, paint);
+    canvas.drawCircle(const Offset(45, 2), 19, paint);
+    canvas.drawCircle(const Offset(20, 6), 20, paint);
+    canvas.drawCircle(const Offset(28, 8), 17, paint);
 
     canvas.restore();
   }
+}
+
+class CloudData {
+  final double baseSpeed;
+  final double yPosition;
+  final double scale;
+  final double opacity;
+  final double verticalFloat;
+  final double floatSpeed;
+  final double phaseOffset;
+
+  CloudData({
+    required this.baseSpeed,
+    required this.yPosition,
+    required this.scale,
+    required this.opacity,
+    required this.verticalFloat,
+    required this.floatSpeed,
+    required this.phaseOffset,
+  });
 }

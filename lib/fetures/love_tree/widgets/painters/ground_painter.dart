@@ -4,9 +4,9 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 class GroundPainter {
-  final Animation<double> animation;
+  final double elapsedTime;
 
-  GroundPainter({required this.animation});
+  GroundPainter({required this.elapsedTime});
 
   void paint(Canvas canvas, Size size, double groundY) {
     final groundPaint = Paint()
@@ -30,7 +30,7 @@ class GroundPainter {
       // Vary grass properties
       final grassIndex = i % 4;
       final baseHeight = 10.0 + (math.sin(i * 0.5) * 5).abs();
-      final sway = math.sin(animation.value * math.pi * 2 + i * 0.1) * 3;
+      final sway = math.sin(elapsedTime * math.pi * 2 + i * 0.1) * 3;
 
       final grassPaint = Paint()
         ..color = grassColors[grassIndex]

@@ -1,4 +1,4 @@
-// FILE: lib/tree_painter.dart (REPLACE the old code with this)
+// FILE: lib/tree_painter.dart
 
 import 'package:flutter/material.dart';
 import 'package:memora/fetures/love_tree/model/tree_model.dart';
@@ -11,7 +11,8 @@ import 'painters/tree_stage_painters.dart';
 class TreePainter extends CustomPainter {
   final LoveTree tree;
   final List<Memory> memories;
-  final Animation<double> animation;
+  final Animation<double> animation; // Keep for repaint notification
+  final double elapsedTime; // NEW: Continuous time
 
   // Our specialist artist instances
   final SkyPainter skyPainter;
@@ -22,35 +23,36 @@ class TreePainter extends CustomPainter {
     required this.tree,
     required this.memories,
     required this.animation,
-  }) : skyPainter = SkyPainter(animation: animation),
+    required this.elapsedTime, // NEW
+  }) : skyPainter = SkyPainter(elapsedTime: elapsedTime), // CHANGED
        memoryPainter = MemoryPainter(
-         animation: animation,
+         elapsedTime: elapsedTime, // CHANGED
          tree: tree,
          memories: memories,
        ),
        treePainters = {
          TreeStage.notPlanted: UnplantedPainter(
-           animation: animation,
+           elapsedTime: elapsedTime, // CHANGED
            tree: tree,
          ),
          TreeStage.seedling: SeedlingPainter(
-           animation: animation,
+           elapsedTime: elapsedTime, // CHANGED
            tree: tree,
          ),
          TreeStage.growing: GrowingPainter(
-           animation: animation,
+           elapsedTime: elapsedTime, // CHANGED
            tree: tree,
          ),
          TreeStage.blooming: BloomingPainter(
-           animation: animation,
+           elapsedTime: elapsedTime, // CHANGED
            tree: tree,
          ),
          TreeStage.mature: MaturePainter(
-           animation: animation,
+           elapsedTime: elapsedTime, // CHANGED
            tree: tree,
          ),
          TreeStage.completed: CompletedPainter(
-           animation: animation,
+           elapsedTime: elapsedTime, // CHANGED
            tree: tree,
          ),
        },
@@ -84,7 +86,6 @@ class TreePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(TreePainter oldDelegate) {
-    // A simpler repaint condition can often be just checking the animation
-    return true;
+    return true; // Always repaint for smooth animation
   }
 }

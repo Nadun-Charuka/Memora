@@ -6,13 +6,13 @@ import 'ground_painter.dart';
 
 // The Abstract Base Class
 abstract class TreeStagePainter {
-  final Animation<double> animation;
+  final double elapsedTime;
   final LoveTree tree;
   final GroundPainter groundPainter;
   final math.Random random;
 
-  TreeStagePainter({required this.animation, required this.tree})
-    : groundPainter = GroundPainter(animation: animation),
+  TreeStagePainter({required this.elapsedTime, required this.tree}) // CHANGED
+    : groundPainter = GroundPainter(elapsedTime: elapsedTime), // CHANGED
       random = math.Random(1);
 
   void paint(Canvas canvas, Size size, double centerX, double groundY);
@@ -20,7 +20,7 @@ abstract class TreeStagePainter {
 
 // 1. Unplanted State Painter
 class UnplantedPainter extends TreeStagePainter {
-  UnplantedPainter({required super.animation, required super.tree});
+  UnplantedPainter({required super.elapsedTime, required super.tree});
 
   @override
   void paint(Canvas canvas, Size size, double centerX, double groundY) {
@@ -36,7 +36,7 @@ class UnplantedPainter extends TreeStagePainter {
       ..style = PaintingStyle.fill;
     canvas.drawCircle(Offset(centerX, groundY + 20), 30, spotPaint);
 
-    final scale = 1.0 + math.sin(animation.value * math.pi * 2) * 0.2;
+    final scale = 1.0 + math.sin(elapsedTime * math.pi * 2) * 0.2;
     canvas.save();
     canvas.translate(centerX, groundY - 10);
     canvas.scale(scale);
@@ -53,14 +53,14 @@ class UnplantedPainter extends TreeStagePainter {
 
 // 2. Seedling State - Young sprout with first leaves
 class SeedlingPainter extends TreeStagePainter {
-  SeedlingPainter({required super.animation, required super.tree});
+  SeedlingPainter({required super.elapsedTime, required super.tree});
 
   @override
   void paint(Canvas canvas, Size size, double centerX, double groundY) {
     groundPainter.paint(canvas, size, groundY);
 
     final stemHeight = tree.height * 2;
-    final sway = math.sin(animation.value * math.pi * 2) * 3;
+    final sway = math.sin(elapsedTime * math.pi * 2) * 3;
 
     // Draw thin, delicate stem
     final stemPaint = Paint()
@@ -168,14 +168,14 @@ class SeedlingPainter extends TreeStagePainter {
 
 // 3. Growing State - Young tree with spreading branches
 class GrowingPainter extends TreeStagePainter {
-  GrowingPainter({required super.animation, required super.tree});
+  GrowingPainter({required super.elapsedTime, required super.tree});
 
   @override
   void paint(Canvas canvas, Size size, double centerX, double groundY) {
     groundPainter.paint(canvas, size, groundY);
 
     final trunkHeight = tree.height * 1.5;
-    final windSway = math.sin(animation.value * math.pi * 2) * 2;
+    final windSway = math.sin(elapsedTime * math.pi * 2) * 2;
 
     // Draw broader trunk
     _drawYoungTrunk(canvas, centerX, groundY, trunkHeight, 10, windSway);
@@ -195,7 +195,7 @@ class GrowingPainter extends TreeStagePainter {
       final y = groundY - trunkHeight * (branchData['y'] as double);
       final branchSway = windSway * (1.0 - (branchData['y'] as double));
       final startOffset = Offset(centerX + branchSway, y);
-      _drawSpreadingBranch(canvas, startOffset, branchData, animation);
+      _drawSpreadingBranch(canvas, startOffset, branchData, elapsedTime);
     }
   }
 
@@ -257,7 +257,7 @@ class GrowingPainter extends TreeStagePainter {
     Canvas canvas,
     Offset start,
     Map<String, dynamic> branchData,
-    Animation<double> animation,
+    double elapsedTime,
   ) {
     final length = branchData['length'] as double;
     final angle = branchData['angle'] as double;
@@ -277,7 +277,7 @@ class GrowingPainter extends TreeStagePainter {
     canvas.drawLine(start, endPoint, branchPaint);
 
     // Draw leaf cluster at branch end
-    _drawLeafCluster(canvas, endPoint, leafCount, 12, angle, animation);
+    _drawLeafCluster(canvas, endPoint, leafCount, 12, angle, elapsedTime);
   }
 
   void _drawLeafCluster(
@@ -286,14 +286,14 @@ class GrowingPainter extends TreeStagePainter {
     int count,
     double size,
     double baseAngle,
-    Animation<double> animation,
+    double elapsedTime,
   ) {
     final clusterRandom = math.Random(center.dx.toInt());
 
     for (int i = 0; i < count; i++) {
       final angle = baseAngle + (clusterRandom.nextDouble() - 0.5) * 2.0;
       final distance = clusterRandom.nextDouble() * size * 1.5;
-      final rustle = math.sin(animation.value * math.pi * 4 + i) * 2;
+      final rustle = math.sin(elapsedTime * math.pi * 4 + i) * 2;
 
       final leafPos = Offset(
         center.dx + math.cos(angle) * distance + rustle,
@@ -340,14 +340,14 @@ class GrowingPainter extends TreeStagePainter {
 
 // 4. Blooming State - Tree with flowers
 class BloomingPainter extends TreeStagePainter {
-  BloomingPainter({required super.animation, required super.tree});
+  BloomingPainter({required super.elapsedTime, required super.tree});
 
   @override
   void paint(Canvas canvas, Size size, double centerX, double groundY) {
     groundPainter.paint(canvas, size, groundY);
 
     final trunkHeight = tree.height * 1.2;
-    final windSway = math.sin(animation.value * math.pi * 2) * 3;
+    final windSway = math.sin(elapsedTime * math.pi * 2) * 3;
 
     // Draw mature trunk
     _drawMatureTrunk(canvas, centerX, groundY, trunkHeight, 18, windSway);
@@ -370,7 +370,7 @@ class BloomingPainter extends TreeStagePainter {
       final y = groundY - trunkHeight * (branchData['y'] as double);
       final branchSway = windSway * (1.0 - (branchData['y'] as double));
       final startOffset = Offset(centerX + branchSway, y);
-      _drawFloweringBranch(canvas, startOffset, branchData, animation);
+      _drawFloweringBranch(canvas, startOffset, branchData, elapsedTime);
     }
   }
 
@@ -442,7 +442,7 @@ class BloomingPainter extends TreeStagePainter {
     Canvas canvas,
     Offset start,
     Map<String, dynamic> branchData,
-    Animation<double> animation,
+    double elapsedTime,
   ) {
     final length = branchData['length'] as double;
     final angle = branchData['angle'] as double;
@@ -471,7 +471,7 @@ class BloomingPainter extends TreeStagePainter {
     canvas.drawPath(branchPath, branchPaint);
 
     // Draw flowers and leaves
-    _drawFlowerCluster(canvas, endPoint, flowerCount, angle, animation);
+    _drawFlowerCluster(canvas, endPoint, flowerCount, angle, elapsedTime);
   }
 
   void _drawFlowerCluster(
@@ -479,14 +479,14 @@ class BloomingPainter extends TreeStagePainter {
     Offset center,
     int count,
     double baseAngle,
-    Animation<double> animation,
+    double elapsedTime,
   ) {
     final clusterRandom = math.Random(center.dx.toInt());
 
     for (int i = 0; i < count; i++) {
       final angle = baseAngle + (clusterRandom.nextDouble() - 0.5) * 2.5;
       final distance = clusterRandom.nextDouble() * 20;
-      final bloom = (math.sin(animation.value * math.pi * 2 + i) + 1) / 2;
+      final bloom = (math.sin(elapsedTime * math.pi * 2 + i) + 1) / 2;
 
       final flowerPos = Offset(
         center.dx + math.cos(angle) * distance,
@@ -564,14 +564,14 @@ class BloomingPainter extends TreeStagePainter {
 // 5. Mature State - Mature tree with lots of branches
 
 class MaturePainter extends TreeStagePainter {
-  MaturePainter({required super.animation, required super.tree});
+  MaturePainter({required super.elapsedTime, required super.tree});
 
   @override
   void paint(Canvas canvas, Size size, double centerX, double groundY) {
     groundPainter.paint(canvas, size, groundY);
 
     final trunkHeight = tree.height;
-    final windSway = math.sin(animation.value * math.pi) * 5;
+    final windSway = math.sin(elapsedTime * math.pi) * 5;
 
     // MODIFIED: Pass 'animation' into the helper function
     _drawRealisticTrunk(
@@ -581,7 +581,7 @@ class MaturePainter extends TreeStagePainter {
       trunkHeight,
       25,
       windSway,
-      animation,
+      elapsedTime,
     );
 
     final branches = [
@@ -600,7 +600,7 @@ class MaturePainter extends TreeStagePainter {
       final branchSway = windSway * (1.0 - (branchData['y'] as double));
       final startOffset = Offset(centerX + branchSway, y);
       // MODIFIED: Pass 'animation' into the helper function
-      _drawRealisticBranch(canvas, startOffset, branchData, 3, animation);
+      _drawRealisticBranch(canvas, startOffset, branchData, 3, elapsedTime);
     }
   }
 }
@@ -612,7 +612,7 @@ void _drawRealisticTrunk(
   double height,
   double width,
   double sway,
-  Animation<double> animation,
+  double elapsedTime,
 ) {
   final trunkPaint = Paint();
   final rect = Rect.fromLTWH(
@@ -654,7 +654,7 @@ void _drawRealisticTrunk(
     ..style = PaintingStyle.stroke;
 
   for (double i = 0; i < height; i += 15) {
-    final textureSway = math.sin(animation.value * math.pi * 2 + i) * 0.5;
+    final textureSway = math.sin(elapsedTime * math.pi * 2 + i) * 0.5;
     canvas.drawLine(
       Offset(centerX - 2 + textureSway, groundY - i),
       Offset(centerX + 2 + textureSway, groundY - i - 10),
@@ -668,7 +668,7 @@ void _drawRealisticBranch(
   Offset start,
   Map<String, double> branchData,
   int depth,
-  Animation<double> animation,
+  double elapsedTime,
 ) {
   if (depth <= 0) return;
 
@@ -704,7 +704,14 @@ void _drawRealisticBranch(
 
   canvas.drawPath(branchPath, paint);
 
-  _drawNaturalLeafCluster(canvas, endPoint, 5, 12, angle, animation);
+  _drawNaturalLeafCluster(
+    canvas,
+    endPoint,
+    5,
+    12,
+    angle,
+    elapsedTime,
+  );
 
   if (depth > 1) {
     final subBranchData = {
@@ -722,7 +729,7 @@ void _drawRealisticBranch(
       subBranchStart,
       subBranchData,
       depth - 1,
-      animation,
+      elapsedTime,
     );
   }
 }
@@ -765,15 +772,15 @@ void _drawNaturalLeafCluster(
   int count,
   double size,
   double baseRotation,
-  Animation<double> animation,
+  double elapsedTime,
 ) {
   final random = math.Random(center.dx.toInt());
 
   for (int i = 0; i < count; i++) {
     final angle = baseRotation + (random.nextDouble() - 0.5) * 1.5;
     final distance = size * 0.5 + random.nextDouble() * size;
-    final rustleX = math.sin(animation.value * math.pi * 2 + i) * 3;
-    final rustleY = math.cos(animation.value * math.pi * 2 + i) * 2;
+    final rustleX = math.sin(elapsedTime * math.pi * 2 + i) * 3;
+    final rustleY = math.cos(elapsedTime * math.pi * 2 + i) * 2;
 
     final offset = Offset(
       center.dx + math.cos(angle) * distance + rustleX,
@@ -790,17 +797,17 @@ void _drawNaturalLeafCluster(
 
 // 6. Completed State - Magnificent tree with golden glow and celebration effects
 class CompletedPainter extends TreeStagePainter {
-  CompletedPainter({required super.animation, required super.tree});
+  CompletedPainter({required super.elapsedTime, required super.tree});
 
   @override
   void paint(Canvas canvas, Size size, double centerX, double groundY) {
     groundPainter.paint(canvas, size, groundY);
 
     final trunkHeight = tree.height * 1.1;
-    final windSway = math.sin(animation.value * math.pi) * 4;
+    final windSway = math.sin(elapsedTime * math.pi) * 4;
 
     // Draw magical glow around the tree
-    _drawCelebrationGlow(canvas, centerX, groundY, trunkHeight, animation);
+    _drawCelebrationGlow(canvas, centerX, groundY, trunkHeight, elapsedTime);
 
     // Draw majestic trunk
     _drawMajesticTrunk(
@@ -810,7 +817,7 @@ class CompletedPainter extends TreeStagePainter {
       trunkHeight,
       28,
       windSway,
-      animation,
+      elapsedTime,
     );
 
     // Draw abundant branches with golden accents
@@ -834,11 +841,17 @@ class CompletedPainter extends TreeStagePainter {
       final y = groundY - trunkHeight * (branchData['y'] as double);
       final branchSway = windSway * (1.0 - (branchData['y'] as double));
       final startOffset = Offset(centerX + branchSway, y);
-      _drawGoldenBranch(canvas, startOffset, branchData, 3, animation);
+      _drawGoldenBranch(canvas, startOffset, branchData, 3, elapsedTime);
     }
 
     // Draw floating sparkles
-    _drawCelebrationSparkles(canvas, centerX, groundY, trunkHeight, animation);
+    _drawCelebrationSparkles(
+      canvas,
+      centerX,
+      groundY,
+      trunkHeight,
+      elapsedTime,
+    );
   }
 
   void _drawCelebrationGlow(
@@ -846,9 +859,9 @@ class CompletedPainter extends TreeStagePainter {
     double centerX,
     double groundY,
     double height,
-    Animation<double> animation,
+    double elapsedTime,
   ) {
-    final glowPulse = (math.sin(animation.value * math.pi * 2) + 1) / 2;
+    final glowPulse = (math.sin(elapsedTime * math.pi * 2) + 1) / 2;
 
     // Multiple layers of glow for depth
     final glowPaint1 = Paint()
@@ -903,7 +916,7 @@ class CompletedPainter extends TreeStagePainter {
     double height,
     double width,
     double sway,
-    Animation<double> animation,
+    double elapsedTime,
   ) {
     final trunkPaint = Paint();
     final rect = Rect.fromLTWH(
@@ -958,7 +971,7 @@ class CompletedPainter extends TreeStagePainter {
       ..style = PaintingStyle.stroke;
 
     for (double i = 0; i < height; i += 12) {
-      final textureSway = math.sin(animation.value * math.pi * 2 + i * 0.1) * 2;
+      final textureSway = math.sin(elapsedTime * math.pi * 2 + i * 0.1) * 2;
       final offsetX = math.sin(i * 0.2) * 4;
 
       // Dark bark lines
@@ -990,7 +1003,7 @@ class CompletedPainter extends TreeStagePainter {
     Offset start,
     Map<String, double> branchData,
     int depth,
-    Animation<double> animation,
+    double elapsedTime,
   ) {
     if (depth <= 0) return;
 
@@ -1036,7 +1049,7 @@ class CompletedPainter extends TreeStagePainter {
     if (depth == 3) {
       final shimmerPaint = Paint()
         ..color = const Color(0xFFFFD700).withValues(
-          alpha: 0.2 * ((math.sin(animation.value * math.pi * 2) + 1) / 2),
+          alpha: 0.2 * ((math.sin(elapsedTime * math.pi * 2) + 1) / 2),
         )
         ..strokeWidth = width * 0.8
         ..strokeCap = StrokeCap.round;
@@ -1053,7 +1066,7 @@ class CompletedPainter extends TreeStagePainter {
     }
 
     // Draw luxurious leaf cluster
-    _drawLuxuriousLeafCluster(canvas, endPoint, 8, 14, angle, animation);
+    _drawLuxuriousLeafCluster(canvas, endPoint, 8, 14, angle, elapsedTime);
 
     // Draw sub-branches
     if (depth > 1) {
@@ -1072,7 +1085,7 @@ class CompletedPainter extends TreeStagePainter {
         subBranchStart,
         subBranchData,
         depth - 1,
-        animation,
+        elapsedTime,
       );
     }
   }
@@ -1083,15 +1096,15 @@ class CompletedPainter extends TreeStagePainter {
     int count,
     double size,
     double baseRotation,
-    Animation<double> animation,
+    double elapsedTime,
   ) {
     final random = math.Random(center.dx.toInt());
 
     for (int i = 0; i < count; i++) {
       final angle = baseRotation + (random.nextDouble() - 0.5) * 1.8;
       final distance = size * 0.4 + random.nextDouble() * size;
-      final rustleX = math.sin(animation.value * math.pi * 2 + i * 0.5) * 3;
-      final rustleY = math.cos(animation.value * math.pi * 2 + i * 0.5) * 2;
+      final rustleX = math.sin(elapsedTime * math.pi * 2 + i * 0.5) * 3;
+      final rustleY = math.cos(elapsedTime * math.pi * 2 + i * 0.5) * 2;
 
       final offset = Offset(
         center.dx + math.cos(angle) * distance + rustleX,
@@ -1106,7 +1119,7 @@ class CompletedPainter extends TreeStagePainter {
         size * (0.9 + random.nextDouble() * 0.3),
         angle,
         isGoldenLeaf,
-        animation,
+        elapsedTime,
       );
     }
   }
@@ -1117,7 +1130,7 @@ class CompletedPainter extends TreeStagePainter {
     double size,
     double rotation,
     bool isGolden,
-    Animation<double> animation,
+    double elapsedTime,
   ) {
     canvas.save();
     canvas.translate(center.dx, center.dy);
@@ -1127,7 +1140,7 @@ class CompletedPainter extends TreeStagePainter {
 
     if (isGolden) {
       // Golden accent leaves
-      final shimmer = (math.sin(animation.value * math.pi * 2) + 1) / 2;
+      final shimmer = (math.sin(elapsedTime * math.pi * 2) + 1) / 2;
       paint.shader = RadialGradient(
         colors: [
           Color.lerp(
@@ -1183,23 +1196,21 @@ class CompletedPainter extends TreeStagePainter {
     double centerX,
     double groundY,
     double height,
-    Animation<double> animation,
+    double elapsedTime,
   ) {
     final random = math.Random(42);
 
     for (int i = 0; i < 20; i++) {
       final angle = random.nextDouble() * math.pi * 2;
       final radius = 80 + random.nextDouble() * 120;
-      final sparklePhase = (animation.value + i * 0.05) % 1.0;
+      final sparklePhase = (elapsedTime + i * 0.05) % 1.0;
       final opacity = math.sin(sparklePhase * math.pi);
 
       if (opacity <= 0) continue;
 
-      final x = centerX + math.cos(angle + animation.value * 2) * radius;
+      final x = centerX + math.cos(angle + elapsedTime * 2) * radius;
       final y =
-          groundY -
-          height * 0.5 +
-          math.sin(angle + animation.value * 2) * radius;
+          groundY - height * 0.5 + math.sin(angle + elapsedTime * 2) * radius;
 
       final sparkleSize = 2.0 + random.nextDouble() * 3.0;
 

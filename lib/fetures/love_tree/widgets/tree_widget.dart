@@ -22,14 +22,20 @@ class TreeWidget extends StatefulWidget {
 class _TreeWidgetState extends State<TreeWidget> with TickerProviderStateMixin {
   late AnimationController _animationController;
   late AnimationController _cardAnimationController;
+  late DateTime _startTime; // NEW: Track elapsed time
   bool _isCardExpanded = false;
 
   @override
   void initState() {
     super.initState();
+
+    // NEW: Record start time for continuous elapsed time calculation
+    _startTime = DateTime.now();
+
+    // CHANGED: Use short duration just to trigger repaints at 60fps
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 4), // Slower for smoother animations
+      duration: const Duration(milliseconds: 16), // ~60fps refresh
     )..repeat();
 
     _cardAnimationController = AnimationController(
@@ -43,6 +49,12 @@ class _TreeWidgetState extends State<TreeWidget> with TickerProviderStateMixin {
     _animationController.dispose();
     _cardAnimationController.dispose();
     super.dispose();
+  }
+
+  // NEW: Getter for continuous elapsed time in seconds
+  //change this 5000 to any value for slow or fast animations
+  double get _elapsedSeconds {
+    return DateTime.now().difference(_startTime).inMilliseconds / 5000.0;
   }
 
   void _toggleCard() {
@@ -60,15 +72,21 @@ class _TreeWidgetState extends State<TreeWidget> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // Full screen tree canvas (no GestureDetector wrapping to avoid blocking interactions)
+        // Full screen tree canvas
         Positioned.fill(
-          child: CustomPaint(
-            size: Size.infinite,
-            painter: TreePainter(
-              tree: widget.tree,
-              memories: widget.memories,
-              animation: _animationController,
-            ),
+          child: AnimatedBuilder(
+            animation: _animationController, // Triggers rebuild every frame
+            builder: (context, child) {
+              return CustomPaint(
+                size: Size.infinite,
+                painter: TreePainter(
+                  tree: widget.tree,
+                  memories: widget.memories,
+                  animation: _animationController, // Keep for compatibility
+                  elapsedTime: _elapsedSeconds, // NEW: Pass continuous time
+                ),
+              );
+            },
           ),
         ),
 
@@ -88,6 +106,7 @@ class _TreeWidgetState extends State<TreeWidget> with TickerProviderStateMixin {
     );
   }
 
+  // ... rest of your existing methods remain the same ...
   Widget _buildTreeInfo() {
     return GestureDetector(
       onTap: _toggleCard,
@@ -169,7 +188,6 @@ class _TreeWidgetState extends State<TreeWidget> with TickerProviderStateMixin {
                       ),
                     ),
                     SizedBox(width: 80),
-                    // Quick stats when collapsed
                     if (!_isCardExpanded && widget.tree.isPlanted) ...[
                       _buildMiniStat(
                         '😊',
@@ -269,7 +287,6 @@ class _TreeWidgetState extends State<TreeWidget> with TickerProviderStateMixin {
 
     return Column(
       children: [
-        // Progress section
         Row(
           children: [
             Expanded(
@@ -338,10 +355,7 @@ class _TreeWidgetState extends State<TreeWidget> with TickerProviderStateMixin {
             ),
           ],
         ),
-
         const SizedBox(height: 16),
-
-        // Stats
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
@@ -369,7 +383,6 @@ class _TreeWidgetState extends State<TreeWidget> with TickerProviderStateMixin {
   Widget _buildStat(String emoji, String label, String value) {
     return Column(
       children: [
-        // Emoji with background circle
         Container(
           width: 40,
           height: 40,
@@ -389,7 +402,6 @@ class _TreeWidgetState extends State<TreeWidget> with TickerProviderStateMixin {
           ),
         ),
         const SizedBox(height: 6),
-        // Value
         Text(
           value,
           style: TextStyle(
@@ -399,7 +411,6 @@ class _TreeWidgetState extends State<TreeWidget> with TickerProviderStateMixin {
           ),
         ),
         const SizedBox(height: 2),
-        // Label
         Text(
           label,
           style: TextStyle(
