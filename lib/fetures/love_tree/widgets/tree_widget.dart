@@ -305,7 +305,7 @@ class _TreeWidgetState extends State<TreeWidget> with TickerProviderStateMixin {
                         ),
                       ),
                       Text(
-                        '${widget.tree.memoryCount}/${LoveTree.MAX_MEMORIES}',
+                        '${widget.tree.memoryCount}/${widget.tree.maxMemories}',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,

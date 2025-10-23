@@ -4,6 +4,7 @@
 // ============================================================================
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:memora/fetures/love_tree/model/tree_model.dart';
 import 'package:memora/fetures/love_tree/services/tree_service.dart';
 import 'package:memora/fetures/memo/model/memory_model.dart';
@@ -56,15 +57,48 @@ class MemoryService {
   }
 
   /// Check if user can add memory today (one per user per day rule)
+  // Future<bool> canAddMemoryToday(String villageId, String userId) async {
+  //   try {
+  //     final monthKey = _getCurrentMonthKey();
+  //     final now = DateTime.now();
+  //     final todayStart = DateTime(now.year, now.month, now.day);
+  //     debugPrint(todayStart.toString());
+  //     final todayEnd = todayStart.add(const Duration(days: 1));
+  //     debugPrint(todayEnd.toString());
+
+  //     final todayMemories = await _firestore
+  //         .collection('villages')
+  //         .doc(villageId)
+  //         .collection('trees')
+  //         .doc(monthKey)
+  //         .collection('memories')
+  //         .where('addedBy', isEqualTo: userId)
+  //         .where(
+  //           'createdAt',
+  //           isGreaterThanOrEqualTo: Timestamp.fromDate(todayStart),
+  //         )
+  //         .where('createdAt', isLessThan: Timestamp.fromDate(todayEnd))
+  //         .get();
+
+  //     return todayMemories.docs.isEmpty;
+  //   } catch (e) {
+  //     return false;
+  //   }
+  // }
+
+  //TODO:comment this and uncomment above one for production
   Future<bool> canAddMemoryToday(String villageId, String userId) async {
     try {
       final monthKey = _getCurrentMonthKey();
       final now = DateTime.now();
-      final todayStart = DateTime(now.year, now.month, now.day);
-      //for testing purpose we can change this so now user can add memo after 1 minute after adding one memo
-      final todayEnd = todayStart.add(const Duration(minutes: 1));
 
-      final todayMemories = await _firestore
+      // 🧪 FOR TESTING: 1-minute cooldown instead of daily
+      final cooldownStart = now.subtract(const Duration(minutes: 1));
+
+      debugPrint('Checking memories added after: $cooldownStart');
+      debugPrint('Current time: $now');
+
+      final recentMemories = await _firestore
           .collection('villages')
           .doc(villageId)
           .collection('trees')
@@ -73,13 +107,18 @@ class MemoryService {
           .where('addedBy', isEqualTo: userId)
           .where(
             'createdAt',
-            isGreaterThanOrEqualTo: Timestamp.fromDate(todayStart),
+            isGreaterThanOrEqualTo: Timestamp.fromDate(cooldownStart),
           )
-          .where('createdAt', isLessThan: Timestamp.fromDate(todayEnd))
           .get();
 
-      return todayMemories.docs.isEmpty;
+      final canAdd = recentMemories.docs.isEmpty;
+      debugPrint(
+        'Can add memory: $canAdd (found ${recentMemories.docs.length} recent memories)',
+      );
+
+      return canAdd;
     } catch (e) {
+      debugPrint('Error checking memory cooldown: $e');
       return false;
     }
   }
@@ -124,7 +163,7 @@ class MemoryService {
 
       // Check if tree is completed
       final memoryCount = treeData['memoryCount'] ?? 0;
-      if (memoryCount >= LoveTree.MAX_MEMORIES) {
+      if (memoryCount >= treeData['maxMemories']) {
         return MemoryResult(
           success: false,
           message:
@@ -183,14 +222,14 @@ class MemoryService {
           '${emotion.icon} Memory added! Tree grew ${growthAmount.toStringAsFixed(1)} units!';
       bool isCompleted = false;
 
-      if (newMemoryCount >= LoveTree.MAX_MEMORIES) {
+      if (newMemoryCount >= treeData['maxMemories']) {
         message =
             '🎉 Congratulations! Tree completed with 60 memories!\n'
             'Your tree is now part of your village history. 💚';
         isCompleted = true;
       } else if (newMemoryCount >= 55) {
         // Give a heads up when close to completion
-        final remaining = LoveTree.MAX_MEMORIES - newMemoryCount;
+        final remaining = -newMemoryCount;
         message =
             '${emotion.icon} Memory added! Only $remaining more to complete this tree!';
       }
@@ -199,7 +238,11 @@ class MemoryService {
         success: true,
         message: message,
         treeCompleted: isCompleted,
-        newStage: LoveTree.calculateStage(newMemoryCount, true),
+        newStage: LoveTree.calculateStage(
+          newMemoryCount,
+          true,
+          treeData['maxMemories'],
+        ),
       );
     } catch (e) {
       return MemoryResult(

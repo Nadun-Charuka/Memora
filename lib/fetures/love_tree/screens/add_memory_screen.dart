@@ -791,8 +791,7 @@ class _AddMemoryScreenState extends ConsumerState<AddMemoryScreen>
         return {
           'growth': '4.0',
           'love': '4',
-          'description':
-              'Gentle leaves will appear, creating a calm and serene atmosphere.',
+          'description': 'Cute rabbit will jump on your garden.',
         };
       case MemoryEmotion.nostalgic:
         return {

@@ -115,9 +115,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   // ✨ NEW: Friendly dialog for already added today
   void _showAlreadyAddedTodayDialog() {
-    showDialog(
+    showSmoothDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      dialog: AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
@@ -215,8 +215,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     if (mounted && tree != null) {
       Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => MemoryListScreen(
+        appFadeScaleRoute(
+          MemoryListScreen(
             tree: tree,
             villageId: _villageId!,
           ),
@@ -555,14 +555,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       );
     }
 
-    return FloatingActionButton.extended(
-      onPressed: _handlePlantTree,
-      backgroundColor: const Color(0xFF6B9B78),
-      icon: const Icon(Icons.park),
-      label: const Text(
-        'Plant Tree',
-        style: TextStyle(fontWeight: FontWeight.bold),
-      ),
+    // NEW: Check if current user has already planted
+    return StreamBuilder<LoveTree?>(
+      stream: _treeService.getCurrentTreeStream(_villageId!),
+      builder: (context, snapshot) {
+        final tree = snapshot.data;
+        final user = ref.read(currentUserProvider);
+
+        final hasUserPlanted = tree?.plantedBy.contains(user?.uid) ?? false;
+        final buttonText = hasUserPlanted
+            ? 'Waiting for partner'
+            : 'Plant Tree';
+        final buttonIcon = hasUserPlanted ? Icons.hourglass_empty : Icons.park;
+
+        return FloatingActionButton.extended(
+          onPressed: hasUserPlanted ? null : _handlePlantTree,
+          backgroundColor: hasUserPlanted
+              ? Colors.grey.shade400
+              : const Color(0xFF6B9B78),
+          icon: Icon(buttonIcon),
+          label: Text(
+            buttonText,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+        );
+      },
     );
   }
 
@@ -713,7 +730,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       builder: (context) => Consumer(
         builder: (context, ref, _) {
           final user = ref.watch(currentUserAsyncProvider);
-
           return Container(
             padding: const EdgeInsets.all(24),
             child: Column(
@@ -781,9 +797,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _showVillageInfo(Village village) {
-    showDialog(
+    showSmoothDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      dialog: AlertDialog(
         title: Text(village.name),
         content: Column(
           mainAxisSize: MainAxisSize.min,

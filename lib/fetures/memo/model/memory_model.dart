@@ -27,7 +27,7 @@ enum MemoryEmotion {
       case MemoryEmotion.nostalgic:
         return '🦋';
       case MemoryEmotion.peaceful:
-        return '🍃';
+        return '🐰';
     }
   }
 }

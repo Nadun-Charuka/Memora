@@ -179,8 +179,9 @@ class TreeService {
       if (!treeDoc.exists) return;
 
       final data = treeDoc.data()!;
+      final maxMemories = data['maxMemories'];
       final newMemoryCount = ((data['memoryCount'] ?? 0) + memoryCountChange)
-          .clamp(0, LoveTree.MAX_MEMORIES);
+          .clamp(0, maxMemories); // UPDATED
       final newHeight = ((data['height'] ?? 10.0) + heightChange).clamp(
         10.0,
         200.0,
@@ -192,6 +193,7 @@ class TreeService {
       final newStage = LoveTree.calculateStage(
         newMemoryCount,
         data['isPlanted'] ?? false,
+        maxMemories, // NEW: Pass maxMemories
       );
 
       final updates = <String, dynamic>{
@@ -204,9 +206,8 @@ class TreeService {
         'lastInteraction': FieldValue.serverTimestamp(),
       };
 
-      // Mark as completed when 60 memories reached
-      if (newMemoryCount >= LoveTree.MAX_MEMORIES &&
-          data['completedAt'] == null) {
+      // UPDATED: Mark as completed when maxMemories reached
+      if (newMemoryCount >= maxMemories && data['completedAt'] == null) {
         updates['completedAt'] = FieldValue.serverTimestamp();
       }
 

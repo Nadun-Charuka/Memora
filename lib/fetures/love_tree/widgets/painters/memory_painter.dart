@@ -511,6 +511,32 @@ class MemoryPainter {
           math.sin(orbitProgress * math.pi * waveFreq) * waveAmp;
 
       _drawMemoryIcon(canvas, Offset(x, y), memory.emotion);
+    } else if (memory.emotion == MemoryEmotion.peaceful) {
+      final random = math.Random(index + 200);
+
+      // Adjusted spacing to keep rabbits closer together
+      final spacing = size.width * 0.08; // Reduced from 0.15 to 0.05
+      final baseX = centerX - (spacing * (total / 2)) + (spacing * index);
+
+      // Reduced random offset to keep rabbits within bounds
+      final randomOffsetX =
+          (random.nextDouble() - 0.5) * 20; // Reduced from 50 to 20
+
+      // Ensure x position stays within canvas bounds
+      final iconSize = 15.0;
+      final x = math.max(
+        iconSize,
+        math.min(size.width - iconSize, baseX + randomOffsetX),
+      );
+
+      // Jumping animation
+      final jumpSpeed = 1 + (random.nextDouble() * 5);
+      final jumpProgress = (elapsedTime * jumpSpeed + (index * 0.3)) % 1.0;
+      final jumpHeight = math.sin(jumpProgress * math.pi) * 10.0;
+
+      final y = groundY - jumpHeight - 10;
+
+      _drawMemoryIcon(canvas, Offset(x, y), memory.emotion);
     } else {
       // Other memories stay in spiral pattern
       final spiralTurns = (index / total) * 2.5;
@@ -681,52 +707,224 @@ class MemoryPainter {
         paint.style = PaintingStyle.fill;
         break;
       case MemoryEmotion.peaceful:
-        final leafSway = math.sin(elapsedTime * math.pi * 2) * 0.2;
-        canvas.rotate(leafSway);
-        paint.color = const Color(0xFF4A7C59);
-        final leafPath = Path()
-          ..moveTo(0, -iconSize * 0.5)
-          ..quadraticBezierTo(
-            iconSize * 0.3,
-            -iconSize * 0.3,
-            iconSize * 0.25,
-            0,
-          )
-          ..quadraticBezierTo(iconSize * 0.3, iconSize * 0.3, 0, iconSize * 0.5)
-          ..quadraticBezierTo(
-            -iconSize * 0.3,
-            iconSize * 0.3,
-            -iconSize * 0.25,
-            0,
-          )
-          ..quadraticBezierTo(
-            -iconSize * 0.3,
-            -iconSize * 0.3,
-            0,
-            -iconSize * 0.5,
-          );
-        canvas.drawPath(leafPath, paint);
-        paint.color = const Color(0xFF228B22);
-        paint.style = PaintingStyle.stroke;
-        paint.strokeWidth = 1.5;
-        canvas.drawLine(
-          Offset(0, -iconSize * 0.5),
-          Offset(0, iconSize * 0.5),
+        // 🐰 Simple White Standing Rabbit
+
+        // Gentle breathing animation
+        final breathe = 1.0 + math.sin(elapsedTime * math.pi * 1.5) * 0.05;
+        canvas.scale(breathe);
+
+        // BIG ROUND TUMMY (bottom)
+        paint.color = Colors.white;
+        canvas.drawCircle(
+          Offset(0, iconSize * 0.2),
+          iconSize * 0.4,
           paint,
         );
-        for (double i = -0.3; i <= 0.3; i += 0.15) {
-          canvas.drawLine(
-            Offset(0, iconSize * i),
-            Offset(iconSize * 0.2, iconSize * (i + 0.1)),
-            paint,
-          );
-          canvas.drawLine(
-            Offset(0, iconSize * i),
-            Offset(-iconSize * 0.2, iconSize * (i + 0.1)),
-            paint,
-          );
-        }
+
+        // HEAD (smaller circle on top)
+        canvas.drawCircle(
+          Offset(0, -iconSize * 0.3),
+          iconSize * 0.28,
+          paint,
+        );
+
+        // LONG EARS (simple ovals)
+        final earTwitch = math.sin(elapsedTime * math.pi * 3) * 0.1;
+
+        // Left ear
+        canvas.save();
+        canvas.translate(-iconSize * 0.15, -iconSize * 0.5);
+        canvas.rotate(-0.2 + earTwitch);
+
+        // Outer ear (white)
+        paint.color = Colors.white;
+        canvas.drawOval(
+          Rect.fromCenter(
+            center: Offset.zero,
+            width: iconSize * 0.18,
+            height: iconSize * 0.4,
+          ),
+          paint,
+        );
+
+        // Inner ear (pink)
+        paint.color = const Color(0xFFFFB6C1);
+        canvas.drawOval(
+          Rect.fromCenter(
+            center: Offset(0, iconSize * 0.05),
+            width: iconSize * 0.1,
+            height: iconSize * 0.28,
+          ),
+          paint,
+        );
+        canvas.restore();
+
+        // Right ear
+        canvas.save();
+        canvas.translate(iconSize * 0.15, -iconSize * 0.5);
+        canvas.rotate(0.2 - earTwitch);
+
+        // Outer ear (white)
+        paint.color = Colors.white;
+        canvas.drawOval(
+          Rect.fromCenter(
+            center: Offset.zero,
+            width: iconSize * 0.18,
+            height: iconSize * 0.4,
+          ),
+          paint,
+        );
+
+        // Inner ear (pink)
+        paint.color = const Color(0xFFFFB6C1);
+        canvas.drawOval(
+          Rect.fromCenter(
+            center: Offset(0, iconSize * 0.05),
+            width: iconSize * 0.1,
+            height: iconSize * 0.28,
+          ),
+          paint,
+        );
+        canvas.restore();
+
+        // Add outline to make it visible
+        paint.color = Colors.blueGrey;
+        paint.style = PaintingStyle.stroke;
+        paint.strokeWidth = 1.0;
+
+        // Outline head
+        canvas.drawCircle(
+          Offset(0, -iconSize * 0.3),
+          iconSize * 0.28,
+          paint,
+        );
+
+        // Outline tummy
+        canvas.drawCircle(
+          Offset(0, iconSize * 0.2),
+          iconSize * 0.4,
+          paint,
+        );
+
         paint.style = PaintingStyle.fill;
+
+        // EYES (two black dots)
+        paint.color = Colors.black;
+        canvas.drawCircle(
+          Offset(-iconSize * 0.1, -iconSize * 0.32),
+          iconSize * 0.05,
+          paint,
+        );
+        canvas.drawCircle(
+          Offset(iconSize * 0.1, -iconSize * 0.32),
+          iconSize * 0.05,
+          paint,
+        );
+
+        // NOSE (pink dot with twitch)
+        final noseTwitch = math.sin(elapsedTime * math.pi * 4) * 0.02;
+        paint.color = const Color(0xFFFFB6C1);
+        canvas.drawCircle(
+          Offset(noseTwitch, -iconSize * 0.22),
+          iconSize * 0.05,
+          paint,
+        );
+
+        // SIMPLE MOUTH (Y shape)
+        paint.color = Colors.black;
+        paint.style = PaintingStyle.stroke;
+        paint.strokeWidth = 1.0;
+        paint.strokeCap = StrokeCap.round;
+
+        // Mouth lines
+        canvas.drawLine(
+          Offset(0, -iconSize * 0.22),
+          Offset(0, -iconSize * 0.16),
+          paint,
+        );
+        canvas.drawLine(
+          Offset(0, -iconSize * 0.16),
+          Offset(-iconSize * 0.08, -iconSize * 0.12),
+          paint,
+        );
+        canvas.drawLine(
+          Offset(0, -iconSize * 0.16),
+          Offset(iconSize * 0.08, -iconSize * 0.12),
+          paint,
+        );
+
+        paint.style = PaintingStyle.fill;
+
+        // SMALL PAWS (on tummy sides)
+        paint.color = Colors.white;
+        canvas.drawCircle(
+          Offset(-iconSize * 0.35, iconSize * 0.15),
+          iconSize * 0.12,
+          paint,
+        );
+        canvas.drawCircle(
+          Offset(iconSize * 0.35, iconSize * 0.15),
+          iconSize * 0.12,
+          paint,
+        );
+
+        // Paw outlines
+        paint.color = const Color(0xFFE0E0E0);
+        paint.style = PaintingStyle.stroke;
+        paint.strokeWidth = 1.0;
+        canvas.drawCircle(
+          Offset(-iconSize * 0.35, iconSize * 0.15),
+          iconSize * 0.12,
+          paint,
+        );
+        canvas.drawCircle(
+          Offset(iconSize * 0.35, iconSize * 0.15),
+          iconSize * 0.12,
+          paint,
+        );
+        paint.style = PaintingStyle.fill;
+
+        // BIG FEET (bottom ovals)
+        paint.color = Colors.white;
+        canvas.drawOval(
+          Rect.fromCenter(
+            center: Offset(-iconSize * 0.15, iconSize * 0.52),
+            width: iconSize * 0.22,
+            height: iconSize * 0.12,
+          ),
+          paint,
+        );
+        canvas.drawOval(
+          Rect.fromCenter(
+            center: Offset(iconSize * 0.15, iconSize * 0.52),
+            width: iconSize * 0.22,
+            height: iconSize * 0.12,
+          ),
+          paint,
+        );
+
+        // Feet outlines
+        paint.color = const Color(0xFFE0E0E0);
+        paint.style = PaintingStyle.stroke;
+        paint.strokeWidth = 1.0;
+        canvas.drawOval(
+          Rect.fromCenter(
+            center: Offset(-iconSize * 0.15, iconSize * 0.52),
+            width: iconSize * 0.22,
+            height: iconSize * 0.12,
+          ),
+          paint,
+        );
+        canvas.drawOval(
+          Rect.fromCenter(
+            center: Offset(iconSize * 0.15, iconSize * 0.52),
+            width: iconSize * 0.22,
+            height: iconSize * 0.12,
+          ),
+          paint,
+        );
+        paint.style = PaintingStyle.fill;
+
         break;
       case MemoryEmotion.excited:
       case MemoryEmotion.joyful:

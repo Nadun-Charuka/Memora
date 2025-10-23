@@ -1198,11 +1198,11 @@ class CompletedPainter extends TreeStagePainter {
     double height,
     double elapsedTime,
   ) {
-    final random = math.Random(42);
+    final random = math.Random(20);
 
     for (int i = 0; i < 20; i++) {
-      final angle = random.nextDouble() * math.pi * 2;
-      final radius = 80 + random.nextDouble() * 120;
+      final angle = random.nextDouble() * math.pi * 3;
+      final radius = 50 + random.nextDouble() * 360;
       final sparklePhase = (elapsedTime + i * 0.05) % 1.0;
       final opacity = math.sin(sparklePhase * math.pi);
 

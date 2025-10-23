@@ -41,10 +41,8 @@ class LoveTree {
   final List<String> plantedBy;
   final DateTime createdAt;
   final DateTime lastInteraction;
-  final DateTime? completedAt; // NEW: Track when tree was completed
-
-  // ignore: constant_identifier_names //this is the max memo for the tree for month for two user
-  static const int MAX_MEMORIES = 5; // Tree completion threshold
+  final DateTime? completedAt;
+  final int maxMemories; // NEW: Make it dynamic per tree
 
   LoveTree({
     required this.id,
@@ -62,11 +60,29 @@ class LoveTree {
     required this.createdAt,
     required this.lastInteraction,
     this.completedAt,
-  });
+    int? maxMemories, // NEW: Optional parameter
+  }) : maxMemories = maxMemories ?? _calculateMaxMemories(id);
+
+  // NEW: Calculate max memories based on month
+  static int _calculateMaxMemories(String monthKey) {
+    try {
+      final parts = monthKey.split('_');
+      if (parts.length != 2) return 62;
+
+      final year = int.parse(parts[0]);
+      final month = int.parse(parts[1]);
+
+      // Get days in month
+      final daysInMonth = DateTime(year, month + 1, 0).day;
+      return daysInMonth * 2; // 2 memories per day
+    } catch (e) {
+      return 62; // Fallback to max
+    }
+  }
 
   bool get isCompleted => stage == TreeStage.completed;
   bool get canAddMemories => isPlanted && !isCompleted;
-  int get remainingMemories => MAX_MEMORIES - memoryCount;
+  int get remainingMemories => maxMemories - memoryCount;
 
   factory LoveTree.fromFirestore(Map<String, dynamic> data, String id) {
     return LoveTree(
@@ -86,6 +102,7 @@ class LoveTree {
       lastInteraction:
           (data['lastInteraction'] as Timestamp?)?.toDate() ?? DateTime.now(),
       completedAt: (data['completedAt'] as Timestamp?)?.toDate(),
+      maxMemories: data['maxMemories'], // NEW: Load from Firestore
     );
   }
 
@@ -102,6 +119,7 @@ class LoveTree {
       'memoryCount': memoryCount,
       'isPlanted': isPlanted,
       'plantedBy': plantedBy,
+      'maxMemories': maxMemories, // NEW: Save to Firestore
       'lastInteraction': FieldValue.serverTimestamp(),
       if (completedAt != null) 'completedAt': Timestamp.fromDate(completedAt!),
     };
@@ -114,18 +132,23 @@ class LoveTree {
     );
   }
 
-  static TreeStage calculateStage(int memoryCount, bool isPlanted) {
+  // Keep static method for backward compatibility
+  static TreeStage calculateStage(
+    int memoryCount,
+    bool isPlanted,
+    int maxMemories,
+  ) {
     if (!isPlanted) return TreeStage.notPlanted;
-    if (memoryCount >= MAX_MEMORIES) return TreeStage.completed;
-    if (memoryCount <= 1) return TreeStage.seedling;
-    if (memoryCount <= 2) return TreeStage.growing;
-    if (memoryCount <= 3) return TreeStage.blooming;
+    if (memoryCount >= maxMemories) return TreeStage.completed;
+    if (memoryCount <= 10) return TreeStage.seedling;
+    if (memoryCount <= 25) return TreeStage.growing;
+    if (memoryCount <= 40) return TreeStage.blooming;
     return TreeStage.mature;
   }
 
   double get stageProgress {
     if (!isPlanted) return 0.0;
     if (isCompleted) return 1.0;
-    return (memoryCount / MAX_MEMORIES).clamp(0.0, 1.0);
+    return (memoryCount / maxMemories).clamp(0.0, 1.0);
   }
 }

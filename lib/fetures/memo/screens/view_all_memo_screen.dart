@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:memora/core/utils/transition.dart';
 import 'package:memora/fetures/auth/provider/auth_provider.dart';
 import 'package:memora/fetures/love_tree/model/tree_model.dart';
 import 'package:memora/fetures/memo/model/memory_model.dart';
@@ -31,88 +32,6 @@ class _MemoryListScreenState extends ConsumerState<MemoryListScreen> {
 
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF6B9B78),
-        foregroundColor: Colors.white,
-        elevation: 0,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Memories',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Text(
-              '${widget.tree.name} • ${widget.tree.memoryCount}/${LoveTree.MAX_MEMORIES}',
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.normal,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          // Tree stage indicator
-          Center(
-            child: Container(
-              margin: const EdgeInsets.only(right: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                widget.tree.stage.displayName,
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.filter_list),
-            onSelected: (value) {
-              setState(() => _filterOption = value);
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'all',
-                child: Row(
-                  children: [
-                    Icon(Icons.list, size: 20),
-                    SizedBox(width: 12),
-                    Text('All Memories'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'mine',
-                child: Row(
-                  children: [
-                    Icon(Icons.person, size: 20),
-                    SizedBox(width: 12),
-                    Text('My Memories'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'partner',
-                child: Row(
-                  children: [
-                    Icon(Icons.favorite, size: 20),
-                    SizedBox(width: 12),
-                    Text('Partner\'s Memories'),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
       body: StreamBuilder<List<Memory>>(
         stream: _memoryService.getMemoriesStream(
           widget.villageId,
@@ -120,280 +39,416 @@ class _MemoryListScreenState extends ConsumerState<MemoryListScreen> {
         ),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(
-                color: Color(0xFF6B9B78),
+            return Scaffold(
+              backgroundColor: Colors.grey.shade50,
+              appBar: _buildAppBar(widget.tree.memoryCount),
+              body: const Center(
+                child: CircularProgressIndicator(
+                  color: Color(0xFF6B9B78),
+                ),
               ),
             );
           }
 
           if (snapshot.hasError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.error_outline,
-                    size: 60,
-                    color: Colors.red,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Error loading memories',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey.shade700,
+            return Scaffold(
+              backgroundColor: Colors.grey.shade50,
+              appBar: _buildAppBar(widget.tree.memoryCount),
+              body: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      size: 60,
+                      color: Colors.red,
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    snapshot.error.toString(),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade500,
+                    const SizedBox(height: 16),
+                    Text(
+                      'Error loading memories',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey.shade700,
+                      ),
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    Text(
+                      snapshot.error.toString(),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade500,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
               ),
             );
           }
 
-          List<Memory> memories = snapshot.data ?? [];
+          List<Memory> allMemories = snapshot.data ?? [];
+
+          // Calculate reactive values
+          final memoryCount = allMemories.length;
+          final progress = memoryCount / widget.tree.maxMemories;
+          final remainingMemories = widget.tree.maxMemories - memoryCount;
+          final isCompleted = memoryCount >= widget.tree.maxMemories;
 
           // Apply filter
+          List<Memory> memories = allMemories;
           if (_filterOption == 'mine' && currentUser != null) {
-            memories = memories
+            memories = allMemories
                 .where((m) => m.addedBy == currentUser.uid)
                 .toList();
           } else if (_filterOption == 'partner' && currentUser != null) {
-            memories = memories
+            memories = allMemories
                 .where((m) => m.addedBy != currentUser.uid)
                 .toList();
           }
 
-          if (memories.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.sentiment_satisfied_alt,
-                    size: 80,
-                    color: Colors.grey.shade400,
+          return Scaffold(
+            backgroundColor: Colors.grey.shade50,
+            appBar: _buildAppBar(memoryCount),
+            body: memories.isEmpty
+                ? _buildEmptyState()
+                : _buildMemoryList(
+                    memories,
+                    memoryCount,
+                    progress,
+                    remainingMemories,
+                    isCompleted,
+                    currentUser,
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    _filterOption == 'mine'
-                        ? 'You haven\'t added any memories yet'
-                        : _filterOption == 'partner'
-                        ? 'Your partner hasn\'t added any memories yet'
-                        : widget.tree.isPlanted
-                        ? 'No memories yet'
-                        : 'Tree not planted yet',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    widget.tree.isPlanted
-                        ? 'Start creating beautiful moments together!'
-                        : 'Both partners need to plant the tree first',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade500,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          // Group memories by date
-          final groupedMemories = _groupMemoriesByDate(memories);
-
-          return Column(
-            children: [
-              // Tree progress indicator
-              if (!widget.tree.isCompleted)
-                Container(
-                  margin: const EdgeInsets.all(16),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        const Color(0xFF6B9B78).withValues(alpha: 0.1),
-                        const Color(0xFF6B9B78).withValues(alpha: 0.05),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: const Color(0xFF6B9B78).withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Tree Progress',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey.shade700,
-                            ),
-                          ),
-                          Text(
-                            '${widget.tree.memoryCount}/${LoveTree.MAX_MEMORIES}',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF6B9B78),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: LinearProgressIndicator(
-                          value: widget.tree.stageProgress,
-                          backgroundColor: Colors.grey.shade200,
-                          color: const Color(0xFF6B9B78),
-                          minHeight: 8,
-                        ),
-                      ),
-                      if (widget.tree.remainingMemories <= 10)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: Text(
-                            '${widget.tree.remainingMemories} more to complete! 🎉',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade600,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-
-              // Tree completed banner
-              if (widget.tree.isCompleted)
-                Container(
-                  margin: const EdgeInsets.all(16),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.amber.shade100,
-                        Colors.amber.shade50,
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.amber.shade300),
-                  ),
-                  child: Row(
-                    children: [
-                      const Text('🎉', style: TextStyle(fontSize: 32)),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Tree Completed!',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF4A7C59),
-                              ),
-                            ),
-                            Text(
-                              widget.tree.completedAt != null
-                                  ? 'Completed on ${DateFormat('MMM d, yyyy').format(widget.tree.completedAt!)}'
-                                  : 'All 60 memories collected!',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey.shade700,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-              // Memory list
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.only(
-                    left: 16,
-                    right: 16,
-                    bottom: 16,
-                  ),
-                  itemCount: groupedMemories.length,
-                  itemBuilder: (context, index) {
-                    final dateKey = groupedMemories.keys.elementAt(index);
-                    final dateMemories = groupedMemories[dateKey]!;
-
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Date header
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 4,
-                                height: 20,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF6B9B78),
-                                  borderRadius: BorderRadius.circular(2),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                _formatDateHeader(dateKey),
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey.shade700,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Container(
-                                  height: 1,
-                                  color: Colors.grey.shade300,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        // Memories for this date
-                        ...dateMemories.map((memory) {
-                          final isMyMemory = currentUser?.uid == memory.addedBy;
-                          return _buildMemoryCard(memory, isMyMemory);
-                        }),
-
-                        const SizedBox(height: 8),
-                      ],
-                    );
-                  },
-                ),
-              ),
-            ],
           );
         },
       ),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar(int memoryCount) {
+    return AppBar(
+      backgroundColor: const Color(0xFF6B9B78),
+      foregroundColor: Colors.white,
+      elevation: 0,
+      title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Memories',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            '${widget.tree.name} • $memoryCount/${widget.tree.maxMemories}',
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.normal,
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        // Tree stage indicator
+        Center(
+          child: Container(
+            margin: const EdgeInsets.only(right: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              widget.tree.stage.displayName,
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+        PopupMenuButton<String>(
+          icon: const Icon(Icons.filter_list),
+          onSelected: (value) {
+            setState(() => _filterOption = value);
+          },
+          itemBuilder: (context) => [
+            const PopupMenuItem(
+              value: 'all',
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.list,
+                    size: 20,
+                    color: Colors.blue,
+                  ),
+                  SizedBox(width: 12),
+                  Text('All Memories'),
+                ],
+              ),
+            ),
+            const PopupMenuItem(
+              value: 'mine',
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.person,
+                    size: 20,
+                    color: Colors.black,
+                  ),
+                  SizedBox(width: 12),
+                  Text('My Memories'),
+                ],
+              ),
+            ),
+            const PopupMenuItem(
+              value: 'partner',
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.favorite,
+                    size: 20,
+                    color: Colors.pink,
+                  ),
+                  SizedBox(width: 12),
+                  Text('Partner\'s Memories'),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.sentiment_satisfied_alt,
+            size: 80,
+            color: Colors.grey.shade400,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            _filterOption == 'mine'
+                ? 'You haven\'t added any memories yet'
+                : _filterOption == 'partner'
+                ? 'Your partner hasn\'t added any memories yet'
+                : widget.tree.isPlanted
+                ? 'No memories yet'
+                : 'Tree not planted yet',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey.shade600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            widget.tree.isPlanted
+                ? 'Start creating beautiful moments together!'
+                : 'Both partners need to plant the tree first',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMemoryList(
+    List<Memory> memories,
+    int memoryCount,
+    double progress,
+    int remainingMemories,
+    bool isCompleted,
+    dynamic currentUser,
+  ) {
+    // Group memories by date
+    final groupedMemories = _groupMemoriesByDate(memories);
+
+    return Column(
+      children: [
+        // Tree progress indicator
+        if (!isCompleted)
+          Container(
+            margin: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFF6B9B78).withValues(alpha: 0.1),
+                  const Color(0xFF6B9B78).withValues(alpha: 0.05),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: const Color(0xFF6B9B78).withValues(alpha: 0.3),
+              ),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Tree Progress',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                    Text(
+                      '$memoryCount/${widget.tree.maxMemories}',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF6B9B78),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    backgroundColor: Colors.grey.shade200,
+                    color: const Color(0xFF6B9B78),
+                    minHeight: 8,
+                  ),
+                ),
+                if (remainingMemories <= 10)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      '$remainingMemories more to complete! 🎉',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+
+        // Tree completed banner
+        if (isCompleted)
+          Container(
+            margin: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.amber.shade100,
+                  Colors.amber.shade50,
+                ],
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.amber.shade300),
+            ),
+            child: Row(
+              children: [
+                const Text('🎉', style: TextStyle(fontSize: 32)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Tree Completed!',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF4A7C59),
+                        ),
+                      ),
+                      Text(
+                        widget.tree.completedAt != null
+                            ? 'Completed on ${DateFormat('MMM d, yyyy').format(widget.tree.completedAt!)}'
+                            : 'All 60 memories collected!',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+        // Memory list
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.only(
+              left: 16,
+              right: 16,
+              bottom: 16,
+            ),
+            itemCount: groupedMemories.length,
+            itemBuilder: (context, index) {
+              final dateKey = groupedMemories.keys.elementAt(index);
+              final dateMemories = groupedMemories[dateKey]!;
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Date header
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 4,
+                          height: 20,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF6B9B78),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          _formatDateHeader(dateKey),
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Container(
+                            height: 1,
+                            color: Colors.grey.shade300,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Memories for this date
+                  ...dateMemories.map((memory) {
+                    final isMyMemory = currentUser?.uid == memory.addedBy;
+                    return _buildMemoryCard(memory, isMyMemory);
+                  }),
+
+                  const SizedBox(height: 8),
+                ],
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -402,8 +457,8 @@ class _MemoryListScreenState extends ConsumerState<MemoryListScreen> {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => MemoryDetailScreen(
+          appFadeScaleRoute(
+            MemoryDetailScreen(
               memory: memory,
               villageId: widget.villageId,
               treeId: widget.tree.id,
