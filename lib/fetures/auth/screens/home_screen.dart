@@ -38,7 +38,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _loadVillageId() async {
-    final user = ref.read(currentUserProvider);
+    final user = ref.read(authServiceProvider).currentUser;
     if (user == null) return;
 
     final villageId = await _villageService.getUserVillageId(user.uid);
@@ -66,7 +66,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Future<void> _handlePlantTree() async {
     if (_villageId == null) return;
 
-    final user = ref.read(currentUserProvider);
+    final user = ref.read(authServiceProvider).currentUser;
     if (user == null) return;
 
     final result = await _treeService.plantTree(_villageId!, user.uid);
@@ -87,7 +87,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // ✨ NEW: Better UX for add memory button
   Future<void> _handleAddMemory() async {
     if (_villageId == null) return;
-    final user = ref.read(currentUserProvider);
+    final user = ref.read(authServiceProvider).currentUser;
     if (user == null) return;
 
     final canAdd = await _memoryService.canAddMemoryToday(
@@ -560,8 +560,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       stream: _treeService.getCurrentTreeStream(_villageId!),
       builder: (context, snapshot) {
         final tree = snapshot.data;
-        final user = ref.read(currentUserProvider);
-
+        final user = ref.read(authServiceProvider).currentUser;
         final hasUserPlanted = tree?.plantedBy.contains(user?.uid) ?? false;
         final buttonText = hasUserPlanted
             ? 'Waiting for partner'
@@ -729,7 +728,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       builder: (context) => Consumer(
         builder: (context, ref, _) {
-          final user = ref.watch(currentUserAsyncProvider);
+          final user = ref.read(authServiceProvider).currentUser;
           return Container(
             padding: const EdgeInsets.all(24),
             child: Column(
