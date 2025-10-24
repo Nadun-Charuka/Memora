@@ -696,11 +696,13 @@ class _MemoryListScreenState extends ConsumerState<MemoryListScreen> {
       case MemoryEmotion.grateful:
         return const Color(0xFFFFD700);
       case MemoryEmotion.peaceful:
-        return const Color(0xFF90EE90);
+        return const Color(0xFFA1A194);
       case MemoryEmotion.nostalgic:
         return const Color(0xFFBA55D3);
       case MemoryEmotion.sad:
         return const Color(0xFF4682B4);
+      case MemoryEmotion.awful:
+        return const Color(0xFF292A2E);
     }
   }
 }

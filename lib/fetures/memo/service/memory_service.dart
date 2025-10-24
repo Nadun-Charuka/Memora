@@ -93,7 +93,7 @@ class MemoryService {
       final now = DateTime.now();
 
       // 🧪 FOR TESTING: 1-minute cooldown instead of daily
-      final cooldownStart = now.subtract(const Duration(minutes: 1));
+      final cooldownStart = now.subtract(const Duration(seconds: 1));
 
       debugPrint('Checking memories added after: $cooldownStart');
       debugPrint('Current time: $now');
@@ -468,6 +468,8 @@ class MemoryService {
         return 3.0;
       case MemoryEmotion.sad:
         return 1.0;
+      case MemoryEmotion.awful:
+        return 0.5;
     }
   }
 
@@ -487,6 +489,8 @@ class MemoryService {
         return 0.02;
       case MemoryEmotion.sad:
         return 0.01;
+      case MemoryEmotion.awful:
+        return 0.005;
     }
   }
 
@@ -508,6 +512,8 @@ class MemoryService {
         return 3;
       case MemoryEmotion.sad:
         return 2;
+      case MemoryEmotion.awful:
+        return 1;
     }
   }
 

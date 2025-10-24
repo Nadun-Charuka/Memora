@@ -807,6 +807,13 @@ class _AddMemoryScreenState extends ConsumerState<AddMemoryScreen>
           'description':
               'Even rain helps trees grow. Your tree supports you through all emotions.',
         };
+      case MemoryEmotion.awful:
+        return {
+          'growth': '1.0',
+          'love': '1',
+          'description':
+              'Dark clouds marked your day awful, but remember... even the happiest relationships have difficult moments.',
+        };
     }
   }
 }

@@ -42,6 +42,10 @@ class MemoryPainter {
     final fruitMemories = memories
         .where((m) => m.emotion == MemoryEmotion.joyful)
         .toList();
+    final stormMemories = memories
+        .where((m) => m.emotion == MemoryEmotion.awful)
+        .toList();
+
     final otherMemories = memories
         .where(
           (m) =>
@@ -60,6 +64,9 @@ class MemoryPainter {
     }
     for (int i = 0; i < rainMemories.length; i++) {
       _drawFallingRain(canvas, size, i, rainMemories.length);
+    }
+    for (int i = 0; i < stormMemories.length; i++) {
+      _drawStormCloud(canvas, size, i, stormMemories.length);
     }
     for (int i = 0; i < fruitMemories.length; i++) {
       _drawHangingFruit(
@@ -408,6 +415,99 @@ class MemoryPainter {
     canvas.restore();
   }
 
+  void _drawStormCloud(Canvas canvas, Size size, int index, int total) {
+    // Position clouds across the top of the screen
+    final x = (size.width / (total + 1)) * (index + 1);
+    final y = 80.0 + (index % 2) * 25; // Vary height slightly
+
+    final cloudScale = 0.6;
+    final paint = Paint()..style = PaintingStyle.fill;
+
+    // Lightning bolt (animated flash)
+    final lightningFlash = (elapsedTime * 2 + index) % 3.0;
+    final isLightning = lightningFlash < 0.2;
+
+    // Animation: vibrate when lightning, gentle drift when not
+    final double drift;
+    if (isLightning) {
+      // Rapid vibration during lightning
+      final vibrate = math.sin(elapsedTime * math.pi * 40) * 3;
+      drift = vibrate;
+    } else {
+      // Slow gentle drift when calm
+      drift = math.sin(elapsedTime * 0.5 + index) * 50;
+    }
+
+    canvas.save();
+    canvas.translate(x + drift, y);
+
+    // Dark fade/shadow around cloud
+    final shadowPaint = Paint()
+      ..color = const Color(0xFF2D3748).withValues(alpha: 0.3)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 20);
+    canvas.drawCircle(Offset.zero, 40 * cloudScale, shadowPaint);
+
+    // Draw storm cloud using your cloud shape
+    canvas.scale(cloudScale);
+
+    // Dark storm cloud color
+    paint.color = const Color(0xFF4A5568).withValues(alpha: 0.9);
+
+    // Your exact cloud shape from SkyPainter
+    canvas.drawCircle(const Offset(-12, 3), 18, paint);
+    canvas.drawCircle(const Offset(0, -2), 22, paint);
+    canvas.drawCircle(const Offset(15, -8), 26, paint);
+    canvas.drawCircle(const Offset(32, -3), 23, paint);
+    canvas.drawCircle(const Offset(45, 2), 19, paint);
+    canvas.drawCircle(const Offset(20, 6), 20, paint);
+    canvas.drawCircle(const Offset(28, 8), 17, paint);
+
+    // Add darker texture/depth overlay
+    paint.color = const Color(0xFF2D3748).withValues(alpha: 0.3);
+    canvas.drawCircle(const Offset(-12, 3), 18, paint);
+    canvas.drawCircle(const Offset(0, -2), 22, paint);
+    canvas.drawCircle(const Offset(15, -8), 26, paint);
+
+    canvas.scale(1.0 / cloudScale); // Reset scale for lightning
+
+    if (isLightning) {
+      // Brief flash every 3 seconds
+      final boltPaint = Paint()
+        ..color = const Color(0xFFFFFACD).withValues(alpha: 0.95)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.5
+        ..strokeCap = StrokeCap.round;
+
+      // Jagged lightning bolt coming from cloud center
+      final lightningPath = Path()
+        ..moveTo(15, 8) // Start from bottom of cloud
+        ..lineTo(20, 25)
+        ..lineTo(15, 25)
+        ..lineTo(22, 45)
+        ..lineTo(17, 45)
+        ..lineTo(25, 65);
+
+      canvas.drawPath(lightningPath, boltPaint);
+
+      // Lightning glow effect
+      boltPaint
+        ..color = const Color(0xFFFFFF00).withValues(alpha: 0.4)
+        ..strokeWidth = 5
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+      canvas.drawPath(lightningPath, boltPaint);
+
+      // Flash on cloud itself
+      canvas.scale(cloudScale);
+      paint
+        ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.15)
+        ..maskFilter = null;
+      canvas.drawCircle(const Offset(15, -8), 26, paint);
+      canvas.drawCircle(const Offset(32, -3), 23, paint);
+    }
+
+    canvas.restore();
+  }
+
   void _drawHangingFruit(
     Canvas canvas,
     Size size,
@@ -420,7 +520,7 @@ class MemoryPainter {
     final angle = (index / total) * math.pi * 2;
     final radius = 60.0 + (index % 3) * 20;
     final x = centerX + math.cos(angle) * radius;
-    final y = groundY - trunkHeight * 0.6 + math.sin(angle) * 30;
+    final y = groundY - trunkHeight * 0.6 + math.sin(angle) * 60;
     final iconSize = 15.0;
     final swing = math.sin(elapsedTime * math.pi * 2 + index) * 3;
     canvas.save();
@@ -537,26 +637,38 @@ class MemoryPainter {
       final y = groundY - jumpHeight - 10;
 
       _drawMemoryIcon(canvas, Offset(x, y), memory.emotion);
-    } else {
-      // Other memories stay in spiral pattern
-      final spiralTurns = (index / total) * 2.5;
-      final angle = spiralTurns * math.pi * 2;
-      final radiusProgress = (index / total);
-      double maxRadius = 80.0;
-      double yOffset = trunkHeight * 0.6;
+    } else if (memory.emotion == MemoryEmotion.love) {
+      final random = math.Random(index + 100);
+      double yCenter;
       if (tree.stage == TreeStage.seedling) {
-        maxRadius = 25.0;
-        yOffset = trunkHeight * 0.5;
+        yCenter = trunkHeight * 0.7;
       } else if (tree.stage == TreeStage.growing) {
-        maxRadius = 50.0;
-        yOffset = trunkHeight * 0.6;
-      } else if (tree.stage == TreeStage.blooming) {
-        maxRadius = 80.0;
-        yOffset = trunkHeight * 0.7;
+        yCenter = trunkHeight * 0.8;
+      } else {
+        yCenter = trunkHeight * 0.9;
       }
-      final radius = 15 + (radiusProgress * maxRadius);
-      final x = centerX + math.cos(angle) * radius;
-      final y = groundY - yOffset + math.sin(angle) * radius * 0.3;
+      final originX = centerX;
+      final originY = groundY - yCenter;
+      final cycleDuration = 3.0 + random.nextDouble() * 2.0;
+      final lifeProgress =
+          (elapsedTime / cycleDuration + (index / total)) % 1.0;
+      final time = lifeProgress * 1.5;
+      final angle = random.nextDouble() * math.pi * 2;
+      double maxSpeed = 160.0;
+      if (tree.stage == TreeStage.seedling) {
+        maxSpeed = 80.0;
+      } else if (tree.stage == TreeStage.growing) {
+        maxSpeed = 120.0;
+      }
+
+      final initialSpeed = maxSpeed * (0.2 + random.nextDouble() * 0.8);
+      final vx = math.cos(angle) * initialSpeed;
+      final vy = math.sin(angle) * initialSpeed;
+      final gravity =
+          160.0; // You can change this value to make it fall faster or slower
+
+      final x = originX + vx * time;
+      final y = originY + vy * time + 0.5 * gravity * time * time;
 
       _drawMemoryIcon(canvas, Offset(x, y), memory.emotion);
     }
@@ -930,6 +1042,7 @@ class MemoryPainter {
       case MemoryEmotion.joyful:
       case MemoryEmotion.grateful:
       case MemoryEmotion.sad:
+      case MemoryEmotion.awful:
         break;
     }
     canvas.restore();

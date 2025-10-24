@@ -167,6 +167,7 @@ class SeedlingPainter extends TreeStagePainter {
 }
 
 // 3. Growing State - Young tree with spreading branches
+//TODO:need to change the leves style to short thin
 class GrowingPainter extends TreeStagePainter {
   GrowingPainter({required super.elapsedTime, required super.tree});
 

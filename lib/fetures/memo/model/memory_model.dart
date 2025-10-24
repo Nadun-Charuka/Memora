@@ -8,7 +8,8 @@ enum MemoryEmotion {
   love,
   sad,
   nostalgic,
-  peaceful;
+  peaceful,
+  awful;
 
   String get icon {
     switch (this) {
@@ -28,6 +29,8 @@ enum MemoryEmotion {
         return '🦋';
       case MemoryEmotion.peaceful:
         return '🐰';
+      case MemoryEmotion.awful:
+        return '⛈️';
     }
   }
 }

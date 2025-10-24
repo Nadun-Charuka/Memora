@@ -99,18 +99,28 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
         title: Text(_getEmotionDisplayName(widget.memory.emotion)),
         actions: [
           if (widget.isMyMemory)
-            IconButton(
-              icon: _isDeleting
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : const Icon(Icons.delete),
-              onPressed: _isDeleting ? null : _handleDelete,
+            Row(
+              children: [
+                IconButton(
+                  onPressed: () {
+                    //TODO:need to handle eddit memo
+                  },
+                  icon: Icon(Icons.edit),
+                ),
+                IconButton(
+                  icon: _isDeleting
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Icon(Icons.delete),
+                  onPressed: _isDeleting ? null : _handleDelete,
+                ),
+              ],
             ),
         ],
       ),
@@ -371,6 +381,8 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
         return 'Nostalgic';
       case MemoryEmotion.sad:
         return 'Sad';
+      case MemoryEmotion.awful:
+        return 'Awful';
     }
   }
 
@@ -387,11 +399,13 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
       case MemoryEmotion.grateful:
         return const Color(0xFFFFD700);
       case MemoryEmotion.peaceful:
-        return const Color(0xFF90EE90);
+        return const Color(0xFFA1A194);
       case MemoryEmotion.nostalgic:
         return const Color(0xFFBA55D3);
       case MemoryEmotion.sad:
         return const Color(0xFF4682B4);
+      case MemoryEmotion.awful:
+        return const Color(0xFF292A2E);
     }
   }
 
@@ -408,11 +422,13 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
       case MemoryEmotion.grateful:
         return const Color.fromARGB(255, 254, 238, 148);
       case MemoryEmotion.peaceful:
-        return const Color.fromARGB(255, 188, 250, 188);
+        return const Color.fromARGB(255, 220, 229, 220);
       case MemoryEmotion.nostalgic:
         return const Color.fromARGB(255, 240, 180, 255);
       case MemoryEmotion.sad:
         return const Color.fromARGB(255, 196, 227, 252);
+      case MemoryEmotion.awful:
+        return const Color.fromARGB(255, 87, 87, 87);
     }
   }
 }

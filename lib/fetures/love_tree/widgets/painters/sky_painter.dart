@@ -58,7 +58,7 @@ class SkyPainter {
       CloudData(
         baseSpeed: 70,
         yPosition: 0.28,
-        scale: 0.6,
+        scale: 0.4,
         opacity: 0.6,
         verticalFloat: 18,
         floatSpeed: 1.0,
