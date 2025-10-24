@@ -1,0 +1,900 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:memora/fetures/auth/provider/auth_provider.dart';
+import 'package:memora/fetures/memo/model/memory_model.dart';
+import 'package:memora/fetures/memo/service/memory_service.dart';
+
+class EditMemoryScreen extends ConsumerStatefulWidget {
+  final String villageId;
+  final String treeId;
+  final Memory memory;
+
+  const EditMemoryScreen({
+    super.key,
+    required this.villageId,
+    required this.treeId,
+    required this.memory,
+  });
+
+  @override
+  ConsumerState<EditMemoryScreen> createState() => _EditMemoryScreenState();
+}
+
+class _EditMemoryScreenState extends ConsumerState<EditMemoryScreen>
+    with SingleTickerProviderStateMixin {
+  late final TextEditingController _contentController;
+  final _memoryService = MemoryService();
+  final _focusNode = FocusNode();
+
+  late MemoryEmotion _selectedEmotion;
+  late bool _hideFromPartner;
+  bool _isLoading = false;
+  bool _hasChanges = false;
+
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Initialize with existing memory data
+    _contentController = TextEditingController(text: widget.memory.content);
+    _selectedEmotion = widget.memory.emotion;
+    _hideFromPartner = widget.memory.isHide;
+
+    // Listen for changes
+    _contentController.addListener(_checkForChanges);
+
+    _animController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOut,
+    );
+    _slideAnimation =
+        Tween<Offset>(
+          begin: const Offset(0, 0.1),
+          end: Offset.zero,
+        ).animate(
+          CurvedAnimation(
+            parent: _animController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
+
+    _animController.forward();
+  }
+
+  @override
+  void dispose() {
+    _contentController.dispose();
+    _focusNode.dispose();
+    _animController.dispose();
+    super.dispose();
+  }
+
+  void _checkForChanges() {
+    final hasChanges =
+        _contentController.text.trim() != widget.memory.content ||
+        _selectedEmotion != widget.memory.emotion ||
+        _hideFromPartner != widget.memory.isHide;
+
+    if (hasChanges != _hasChanges) {
+      setState(() => _hasChanges = hasChanges);
+    }
+  }
+
+  Future<void> _handleUpdate() async {
+    final content = _contentController.text.trim();
+
+    if (content.isEmpty) {
+      _showSnackBar('Please write something about this memory 📝');
+      return;
+    }
+
+    if (content.length < 10) {
+      _showSnackBar('Please write at least 10 characters ✍️');
+      return;
+    }
+
+    // Unfocus keyboard
+    _focusNode.unfocus();
+
+    setState(() => _isLoading = true);
+
+    final user = ref.read(authServiceProvider).currentUser;
+    if (user == null) {
+      setState(() => _isLoading = false);
+      _showSnackBar('Please login to edit memories');
+      return;
+    }
+
+    final result = await _memoryService.updateMemory(
+      villageId: widget.villageId,
+      treeId: widget.treeId,
+      memoryId: widget.memory.id,
+      userId: user.uid,
+      content: content,
+      emotion: _selectedEmotion,
+      isHide: _hideFromPartner,
+      photoUrl: widget.memory.photoUrl,
+    );
+
+    if (!mounted) return;
+
+    setState(() => _isLoading = false);
+
+    if (result.success) {
+      _showSuccessDialog(result.message);
+    } else {
+      _showSnackBar(result.message);
+    }
+  }
+
+  Future<bool> _onWillPop() async {
+    if (!_hasChanges) return true;
+
+    final shouldPop = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: const Text('Discard changes?'),
+        content: const Text(
+          'You have unsaved changes. Are you sure you want to leave?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Keep Editing'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
+    );
+
+    return shouldPop ?? false;
+  }
+
+  void _showSuccessDialog(String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+        ),
+        contentPadding: const EdgeInsets.all(24),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: const Color(0xFF6B9B78).withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Text(
+                  _selectedEmotion.icon,
+                  style: const TextStyle(fontSize: 40),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Memory Updated!',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade600,
+                height: 1.5,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: () {
+                Navigator.pop(context); // Close dialog
+                Navigator.pop(context, true); // Go back with result
+              },
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF6B9B78),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+              child: const Text('Done'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: const Color(0xFF6B9B78),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        margin: const EdgeInsets.all(16),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: !_hasChanges,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        final shouldPop = await _onWillPop();
+        if (shouldPop && context.mounted) {
+          Navigator.pop(context);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFFAFAFA),
+        body: SafeArea(
+          child: Column(
+            children: [
+              _buildHeader(),
+              Expanded(
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: SlideTransition(
+                    position: _slideAnimation,
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildEmotionSection(),
+                          const SizedBox(height: 24),
+                          _buildContentSection(),
+                          const SizedBox(height: 20),
+                          _buildHideOption(),
+                          const SizedBox(height: 20),
+                          _buildGrowthPreview(),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              _buildBottomBar(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.close, size: 24),
+            onPressed: _isLoading
+                ? null
+                : () async {
+                    if (_hasChanges) {
+                      final shouldPop = await _onWillPop();
+                      if (shouldPop && mounted) {
+                        Navigator.pop(context);
+                      }
+                    } else {
+                      Navigator.pop(context);
+                    }
+                  },
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Edit Memory',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  'Update your moment 🌱',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (_hasChanges)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.orange.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: Colors.orange.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.edit,
+                    size: 14,
+                    color: Colors.orange.shade700,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Unsaved',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.orange.shade700,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmotionSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 4,
+              height: 20,
+              decoration: BoxDecoration(
+                color: const Color(0xFF6B9B78),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Text(
+              'How are you feeling?',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: MemoryEmotion.values.map((emotion) {
+              final isSelected = _selectedEmotion == emotion;
+              return Padding(
+                padding: const EdgeInsets.only(right: 10),
+                child: _buildEmotionChip(emotion, isSelected),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmotionChip(MemoryEmotion emotion, bool isSelected) {
+    return GestureDetector(
+      onTap: _isLoading
+          ? null
+          : () {
+              setState(() => _selectedEmotion = emotion);
+              _checkForChanges();
+            },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF6B9B78) : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: isSelected
+                  ? const Color(0xFF6B9B78).withValues(alpha: 0.3)
+                  : Colors.black.withValues(alpha: 0.05),
+              blurRadius: isSelected ? 8 : 4,
+              offset: Offset(0, isSelected ? 4 : 2),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Text(
+              emotion.icon,
+              style: const TextStyle(fontSize: 28),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              emotion.name.toUpperCase(),
+              style: TextStyle(
+                color: isSelected ? Colors.white : Colors.black87,
+                fontWeight: FontWeight.w600,
+                fontSize: 11,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContentSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 4,
+              height: 20,
+              decoration: BoxDecoration(
+                color: const Color(0xFF6B9B78),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Text(
+              'What happened?',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: TextField(
+            controller: _contentController,
+            focusNode: _focusNode,
+            maxLines: 4,
+            maxLength: 500,
+            enabled: !_isLoading,
+            style: const TextStyle(
+              fontSize: 15,
+              height: 1.5,
+            ),
+            decoration: InputDecoration(
+              hintText: 'Share your special moment...',
+              hintStyle: TextStyle(
+                color: Colors.grey.shade400,
+                fontSize: 14,
+                height: 1.5,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.all(16),
+              counterStyle: TextStyle(
+                color: Colors.grey.shade500,
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHideOption() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: _hideFromPartner
+              ? const Color(0xFF6B9B78).withValues(alpha: 0.3)
+              : Colors.grey.shade200,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: _hideFromPartner
+                  ? const Color(0xFF6B9B78).withValues(alpha: 0.1)
+                  : Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              _hideFromPartner ? Icons.visibility_off : Icons.visibility,
+              color: _hideFromPartner
+                  ? const Color(0xFF6B9B78)
+                  : Colors.grey.shade600,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Keep this memory private',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade800,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Only you can see this memory',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Switch(
+            value: _hideFromPartner,
+            onChanged: _isLoading
+                ? null
+                : (value) {
+                    setState(() => _hideFromPartner = value);
+                    _checkForChanges();
+                  },
+            activeColor: const Color(0xFF6B9B78),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGrowthPreview() {
+    final stats = _getEmotionStats(_selectedEmotion);
+    final emotionChanged = _selectedEmotion != widget.memory.emotion;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF6B9B78).withValues(alpha: 0.1),
+            const Color(0xFF6B9B78).withValues(alpha: 0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFF6B9B78).withValues(alpha: 0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                _selectedEmotion.icon,
+                style: const TextStyle(fontSize: 24),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  emotionChanged
+                      ? '${_selectedEmotion.name.toUpperCase()} - Updated Impact'
+                      : '${_selectedEmotion.name.toUpperCase()} Impact',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF4A7C59),
+                  ),
+                ),
+              ),
+              if (emotionChanged)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'CHANGED',
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.orange.shade700,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatBadge(
+                  '🌱 ${emotionChanged ? "±" : "+"}${stats['growth']}',
+                  'Growth',
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildStatBadge(
+                  '💚 ${emotionChanged ? "±" : "+"}${stats['love']}',
+                  'Love Points',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            stats['description']!,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey.shade700,
+              height: 1.4,
+            ),
+          ),
+          if (emotionChanged) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.orange.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 16,
+                    color: Colors.orange.shade700,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Tree stats will be adjusted based on emotion change',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.orange.shade700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatBadge(String value, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF6B9B78),
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              color: Colors.grey.shade600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomBar() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          width: double.infinity,
+          height: 56,
+          child: FilledButton(
+            onPressed: (_isLoading || !_hasChanges) ? null : _handleUpdate,
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF6B9B78),
+              disabledBackgroundColor: Colors.grey.shade300,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              elevation: 0,
+            ),
+            child: _isLoading
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2.5,
+                    ),
+                  )
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.check_circle_outline, size: 20),
+                      const SizedBox(width: 8),
+                      Text(
+                        _hasChanges ? 'Save Changes' : 'No Changes',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Map<String, dynamic> _getEmotionStats(MemoryEmotion emotion) {
+    switch (emotion) {
+      case MemoryEmotion.love:
+        return {
+          'growth': '8.0',
+          'love': '10',
+          'description':
+              'A beautiful heart will bloom on your tree! This is the most powerful memory.',
+        };
+      case MemoryEmotion.joyful:
+        return {
+          'growth': '7.0',
+          'love': '8',
+          'description':
+              'Your tree will bear delicious fruit to celebrate this joyful moment!',
+        };
+      case MemoryEmotion.happy:
+        return {
+          'growth': '6.0',
+          'love': '6',
+          'description':
+              'A beautiful flower will bloom, adding color to your growing tree.',
+        };
+      case MemoryEmotion.excited:
+        return {
+          'growth': '6.0',
+          'love': '6',
+          'description':
+              'A cheerful bird will perch on your branches, bringing life to your tree!',
+        };
+      case MemoryEmotion.grateful:
+        return {
+          'growth': '5.0',
+          'love': '5',
+          'description':
+              'A shining star will light up your tree, showing appreciation.',
+        };
+      case MemoryEmotion.peaceful:
+        return {
+          'growth': '4.0',
+          'love': '4',
+          'description': 'Cute rabbit will jump on your garden.',
+        };
+      case MemoryEmotion.nostalgic:
+        return {
+          'growth': '3.0',
+          'love': '3',
+          'description':
+              'A butterfly will visit, reminding you of beautiful past moments.',
+        };
+      case MemoryEmotion.sad:
+        return {
+          'growth': '1.0',
+          'love': '2',
+          'description':
+              'Even rain helps trees grow. Your tree supports you through all emotions.',
+        };
+      case MemoryEmotion.awful:
+        return {
+          'growth': '1.0',
+          'love': '1',
+          'description':
+              'Dark clouds marked your day awful, but remember... even the happiest relationships have difficult moments.',
+        };
+    }
+  }
+}

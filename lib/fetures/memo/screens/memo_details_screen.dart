@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:memora/core/utils/transition.dart';
 import 'package:memora/fetures/auth/provider/auth_provider.dart';
 import 'package:memora/fetures/memo/model/memory_model.dart';
+import 'package:memora/fetures/memo/screens/edit_memory_screen.dart';
 import 'package:memora/fetures/memo/service/memory_service.dart';
 
 class MemoryDetailScreen extends ConsumerStatefulWidget {
@@ -161,10 +163,27 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                       : 'Hide from partner',
                 ),
                 IconButton(
-                  onPressed: () {
-                    //TODO:need to handle edit memo
-                  },
+                  onPressed: _isDeleting || _isTogglingHide
+                      ? null
+                      : () async {
+                          final result = await Navigator.push(
+                            context,
+                            appFadeScaleRoute(
+                              EditMemoryScreen(
+                                villageId: widget.villageId,
+                                treeId: widget.treeId,
+                                memory: widget.memory,
+                              ),
+                            ),
+                          );
+
+                          // If memory was updated, go back to refresh the list
+                          if (result == true && mounted) {
+                            Navigator.pop(context);
+                          }
+                        },
                   icon: const Icon(Icons.edit),
+                  tooltip: 'Edit memory',
                 ),
                 IconButton(
                   icon: _isDeleting

@@ -254,6 +254,101 @@ class MemoryService {
     }
   }
 
+  /// Update/Edit a memory (only owner can edit)
+  Future<MemoryResult> updateMemory({
+    required String villageId,
+    required String treeId,
+    required String memoryId,
+    required String userId,
+    required String content,
+    required MemoryEmotion emotion,
+    required bool isHide,
+    String? photoUrl,
+  }) async {
+    try {
+      final memoryRef = _firestore
+          .collection('villages')
+          .doc(villageId)
+          .collection('trees')
+          .doc(treeId)
+          .collection('memories')
+          .doc(memoryId);
+
+      final memoryDoc = await memoryRef.get();
+      if (!memoryDoc.exists) {
+        return MemoryResult(
+          success: false,
+          message: 'Memory not found',
+        );
+      }
+
+      // Check if user owns the memory
+      final memoryData = memoryDoc.data()!;
+      if (memoryData['addedBy'] != userId) {
+        return MemoryResult(
+          success: false,
+          message: 'You can only edit your own memories',
+        );
+      }
+
+      // Get old emotion for stats adjustment
+      final oldEmotionName = memoryData['emotion'];
+      final oldEmotion = MemoryEmotion.values.firstWhere(
+        (e) => e.name == oldEmotionName,
+        orElse: () => MemoryEmotion.happy,
+      );
+
+      // Update the memory
+      await memoryRef.update({
+        'content': content,
+        'emotion': emotion.name,
+        'isHide': isHide,
+        if (photoUrl != null) 'photoUrl': photoUrl,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      // If emotion changed, adjust tree stats
+      if (oldEmotion != emotion) {
+        // Remove old emotion effects
+        await _treeService.updateTreeStats(
+          villageId: villageId,
+          treeId: treeId,
+          memoryCountChange: 0,
+          lovePointsChange: -_calculateLovePoints(oldEmotion),
+          heightChange: -_calculateGrowth(oldEmotion),
+          happinessChange: -_calculateHappinessBoost(oldEmotion),
+        );
+
+        // Add new emotion effects
+        await _treeService.updateTreeStats(
+          villageId: villageId,
+          treeId: treeId,
+          memoryCountChange: 0,
+          lovePointsChange: _calculateLovePoints(emotion),
+          heightChange: _calculateGrowth(emotion),
+          happinessChange: _calculateHappinessBoost(emotion),
+        );
+
+        // Update village stats
+        await _villageService.updateVillageStats(
+          villageId: villageId,
+          lovePointsIncrement:
+              _calculateLovePoints(emotion) - _calculateLovePoints(oldEmotion),
+        );
+      }
+
+      return MemoryResult(
+        success: true,
+        message: 'Memory updated successfully! ${emotion.icon}',
+      );
+    } catch (e) {
+      return MemoryResult(
+        success: false,
+        message: 'Error updating memory: ${e.toString()}',
+      );
+    }
+  }
+
   /// Delete a memory (only the creator can delete)
   Future<MemoryResult> deleteMemory({
     required String villageId,

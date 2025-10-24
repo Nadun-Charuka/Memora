@@ -518,6 +518,7 @@ class _MemoryListScreenState extends ConsumerState<MemoryListScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // In the header section, after the author name
                         Row(
                           children: [
                             Text(
@@ -552,6 +553,28 @@ class _MemoryListScreenState extends ConsumerState<MemoryListScreen> {
                                   ),
                                 ),
                               ),
+                            // Add this for edited indicator
+                            if (memory.updatedAt != null) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Text(
+                                  'Edited',
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    color: Colors.blue,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                         const SizedBox(height: 2),
