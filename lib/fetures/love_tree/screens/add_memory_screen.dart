@@ -26,6 +26,7 @@ class _AddMemoryScreenState extends ConsumerState<AddMemoryScreen>
   bool _isLoading = false;
   bool _checkingEligibility = true;
   bool _canAddToday = false;
+  bool _hideFromPartner = false;
 
   late AnimationController _animController;
   late Animation<double> _fadeAnimation;
@@ -184,6 +185,7 @@ class _AddMemoryScreenState extends ConsumerState<AddMemoryScreen>
       userName: user.displayName ?? 'You',
       content: content,
       emotion: _selectedEmotion,
+      isHide: _hideFromPartner,
     );
 
     if (!mounted) return;
@@ -342,6 +344,9 @@ class _AddMemoryScreenState extends ConsumerState<AddMemoryScreen>
 
                         // Content Input
                         _buildContentSection(),
+                        const SizedBox(height: 20),
+
+                        _buildHideOption(),
                         const SizedBox(height: 20),
 
                         // Growth Preview Card
@@ -561,7 +566,7 @@ class _AddMemoryScreenState extends ConsumerState<AddMemoryScreen>
           child: TextField(
             controller: _contentController,
             focusNode: _focusNode,
-            maxLines: 8,
+            maxLines: 4,
             maxLength: 500,
             enabled: !_isLoading,
             style: const TextStyle(
@@ -589,6 +594,83 @@ class _AddMemoryScreenState extends ConsumerState<AddMemoryScreen>
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildHideOption() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: _hideFromPartner
+              ? const Color(0xFF6B9B78).withValues(alpha: 0.3)
+              : Colors.grey.shade200,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: _hideFromPartner
+                  ? const Color(0xFF6B9B78).withValues(alpha: 0.1)
+                  : Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              _hideFromPartner ? Icons.visibility_off : Icons.visibility,
+              color: _hideFromPartner
+                  ? const Color(0xFF6B9B78)
+                  : Colors.grey.shade600,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Keep this memory private',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade800,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Only you can see this memory',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Switch(
+            value: _hideFromPartner,
+            onChanged: _isLoading
+                ? null
+                : (value) {
+                    setState(() => _hideFromPartner = value);
+                  },
+            activeColor: const Color(0xFF6B9B78),
+          ),
+        ],
+      ),
     );
   }
 

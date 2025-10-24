@@ -167,7 +167,6 @@ class SeedlingPainter extends TreeStagePainter {
 }
 
 // 3. Growing State - Young tree with spreading branches
-//TODO:need to change the leves style to short thin
 class GrowingPainter extends TreeStagePainter {
   GrowingPainter({required super.elapsedTime, required super.tree});
 
@@ -183,13 +182,13 @@ class GrowingPainter extends TreeStagePainter {
 
     // Draw spreading branches with more foliage
     final branches = [
-      {'y': 0.35, 'length': 45.0, 'angle': -0.9, 'leaves': 8},
-      {'y': 0.38, 'length': 45.0, 'angle': 0.9, 'leaves': 8},
-      {'y': 0.55, 'length': 50.0, 'angle': -0.7, 'leaves': 10},
-      {'y': 0.58, 'length': 50.0, 'angle': 0.7, 'leaves': 10},
-      {'y': 0.75, 'length': 40.0, 'angle': -0.6, 'leaves': 7},
-      {'y': 0.78, 'length': 40.0, 'angle': 0.6, 'leaves': 7},
-      {'y': 0.9, 'length': 30.0, 'angle': 0.0, 'leaves': 6},
+      {'y': 0.35, 'length': 45.0, 'angle': -0.9, 'leaves': 12},
+      {'y': 0.38, 'length': 45.0, 'angle': 0.9, 'leaves': 12},
+      {'y': 0.55, 'length': 50.0, 'angle': -0.7, 'leaves': 14},
+      {'y': 0.58, 'length': 50.0, 'angle': 0.7, 'leaves': 14},
+      {'y': 0.75, 'length': 40.0, 'angle': -0.6, 'leaves': 10},
+      {'y': 0.78, 'length': 40.0, 'angle': 0.6, 'leaves': 10},
+      {'y': 0.9, 'length': 30.0, 'angle': 0.0, 'leaves': 8},
     ];
 
     for (var branchData in branches) {
@@ -278,7 +277,7 @@ class GrowingPainter extends TreeStagePainter {
     canvas.drawLine(start, endPoint, branchPaint);
 
     // Draw leaf cluster at branch end
-    _drawLeafCluster(canvas, endPoint, leafCount, 12, angle, elapsedTime);
+    _drawLeafCluster(canvas, endPoint, leafCount, 18, angle, elapsedTime);
   }
 
   void _drawLeafCluster(
@@ -292,48 +291,89 @@ class GrowingPainter extends TreeStagePainter {
     final clusterRandom = math.Random(center.dx.toInt());
 
     for (int i = 0; i < count; i++) {
-      final angle = baseAngle + (clusterRandom.nextDouble() - 0.5) * 2.0;
-      final distance = clusterRandom.nextDouble() * size * 1.5;
-      final rustle = math.sin(elapsedTime * math.pi * 4 + i) * 2;
+      final angle = baseAngle + (clusterRandom.nextDouble() - 0.5) * 3.0;
+      final distance = clusterRandom.nextDouble() * size * 1.2;
+      final rustle = math.sin(elapsedTime * math.pi * 4 + i) * 3;
 
       final leafPos = Offset(
         center.dx + math.cos(angle) * distance + rustle,
         center.dy + math.sin(angle) * distance,
       );
 
-      final leafSize = size * (0.7 + clusterRandom.nextDouble() * 0.6);
-      _drawYoungLeaf(canvas, leafPos, leafSize, angle);
+      final leafSize = size * (0.8 + clusterRandom.nextDouble() * 0.4);
+      final leafRotation = angle + (clusterRandom.nextDouble() - 0.5) * 1.5;
+      _drawThinLongLeaf(canvas, leafPos, leafSize, leafRotation);
     }
   }
 
-  void _drawYoungLeaf(
+  void _drawThinLongLeaf(
     Canvas canvas,
     Offset center,
-    double size,
+    double length,
     double rotation,
   ) {
     canvas.save();
     canvas.translate(center.dx, center.dy);
     canvas.rotate(rotation);
 
+    // Thin, elongated leaf shape
     final leafPaint = Paint()
       ..style = PaintingStyle.fill
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          const Color(0xFF7CB342),
-          const Color(0xFF558B2F),
-        ],
-      ).createShader(Rect.fromCircle(center: Offset.zero, radius: size));
+      ..shader =
+          LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              const Color(0xFF9CCC65), // Light green
+              const Color(0xFF7CB342), // Medium light green
+              const Color(0xFF689F38), // Slightly darker
+            ],
+            stops: [0.0, 0.5, 1.0],
+          ).createShader(
+            Rect.fromLTWH(-length * 0.1, -length * 0.5, length * 0.2, length),
+          );
 
+    // Thin, elongated leaf path
     final path = Path()
-      ..moveTo(0, -size * 0.5)
-      ..quadraticBezierTo(size * 0.5, -size * 0.2, size * 0.6, 0)
-      ..quadraticBezierTo(size * 0.5, size * 0.2, 0, size * 0.5)
-      ..quadraticBezierTo(-size * 0.5, size * 0.2, -size * 0.6, 0)
-      ..quadraticBezierTo(-size * 0.5, -size * 0.2, 0, -size * 0.5);
+      ..moveTo(0, -length * 0.5) // Tip
+      ..quadraticBezierTo(
+        length * 0.08,
+        -length * 0.2,
+        length * 0.1,
+        0,
+      ) // Right side
+      ..quadraticBezierTo(
+        length * 0.08,
+        length * 0.2,
+        0,
+        length * 0.5,
+      ) // Bottom tip
+      ..quadraticBezierTo(
+        -length * 0.08,
+        length * 0.2,
+        -length * 0.1,
+        0,
+      ) // Left side
+      ..quadraticBezierTo(
+        -length * 0.08,
+        -length * 0.2,
+        0,
+        -length * 0.5,
+      ); // Back to tip
     canvas.drawPath(path, leafPaint);
+
+    // Central vein (midrib)
+    final veinPaint = Paint()
+      ..color = const Color(0xFF558B2F).withValues(alpha: 0.5)
+      ..strokeWidth = 0.8
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
+    canvas.drawLine(
+      Offset(0, -length * 0.5),
+      Offset(0, length * 0.5),
+      veinPaint,
+    );
 
     canvas.restore();
   }
@@ -844,15 +884,6 @@ class CompletedPainter extends TreeStagePainter {
       final startOffset = Offset(centerX + branchSway, y);
       _drawGoldenBranch(canvas, startOffset, branchData, 3, elapsedTime);
     }
-
-    // Draw floating sparkles
-    _drawCelebrationSparkles(
-      canvas,
-      centerX,
-      groundY,
-      trunkHeight,
-      elapsedTime,
-    );
   }
 
   void _drawCelebrationGlow(
@@ -1190,56 +1221,5 @@ class CompletedPainter extends TreeStagePainter {
     }
 
     canvas.restore();
-  }
-
-  void _drawCelebrationSparkles(
-    Canvas canvas,
-    double centerX,
-    double groundY,
-    double height,
-    double elapsedTime,
-  ) {
-    final random = math.Random(20);
-
-    for (int i = 0; i < 20; i++) {
-      final angle = random.nextDouble() * math.pi * 3;
-      final radius = 50 + random.nextDouble() * 360;
-      final sparklePhase = (elapsedTime + i * 0.05) % 1.0;
-      final opacity = math.sin(sparklePhase * math.pi);
-
-      if (opacity <= 0) continue;
-
-      final x = centerX + math.cos(angle + elapsedTime * 2) * radius;
-      final y =
-          groundY - height * 0.5 + math.sin(angle + elapsedTime * 2) * radius;
-
-      final sparkleSize = 2.0 + random.nextDouble() * 3.0;
-
-      // Draw sparkle cross
-      final sparklePaint = Paint()
-        ..color = const Color(0xFFFFD700).withValues(alpha: opacity * 0.8)
-        ..strokeWidth = 1.5
-        ..strokeCap = StrokeCap.round;
-
-      // Horizontal line
-      canvas.drawLine(
-        Offset(x - sparkleSize, y),
-        Offset(x + sparkleSize, y),
-        sparklePaint,
-      );
-
-      // Vertical line
-      canvas.drawLine(
-        Offset(x, y - sparkleSize),
-        Offset(x, y + sparkleSize),
-        sparklePaint,
-      );
-
-      // Center glow
-      final glowPaint = Paint()
-        ..color = const Color(0xFFFFFFFF).withValues(alpha: opacity * 0.6)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
-      canvas.drawCircle(Offset(x, y), sparkleSize * 0.5, glowPaint);
-    }
   }
 }

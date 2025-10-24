@@ -43,6 +43,7 @@ class Memory {
   final String addedBy;
   final String addedByName;
   final DateTime createdAt;
+  final bool isHide;
 
   Memory({
     required this.id,
@@ -52,6 +53,7 @@ class Memory {
     required this.addedBy,
     required this.addedByName,
     required this.createdAt,
+    this.isHide = false,
   });
 
   factory Memory.fromFirestore(Map<String, dynamic> data, String id) {
@@ -66,6 +68,7 @@ class Memory {
       addedBy: data['addedBy'] ?? '',
       addedByName: data['addedByName'] ?? 'Unknown',
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      isHide: data['isHide'] ?? false,
     );
   }
 
@@ -77,6 +80,7 @@ class Memory {
       'addedBy': addedBy,
       'addedByName': addedByName,
       'createdAt': FieldValue.serverTimestamp(),
+      'isHide': isHide,
     };
   }
 }

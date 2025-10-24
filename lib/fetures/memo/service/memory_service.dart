@@ -131,6 +131,7 @@ class MemoryService {
     required String content,
     required MemoryEmotion emotion,
     String? photoUrl,
+    bool isHide = false,
   }) async {
     try {
       final monthKey = _getCurrentMonthKey();
@@ -190,6 +191,7 @@ class MemoryService {
         addedBy: userId,
         addedByName: userName,
         createdAt: DateTime.now(),
+        isHide: isHide,
       );
 
       // Add memory to Firestore subcollection
@@ -368,6 +370,57 @@ class MemoryService {
           .toList();
     } catch (e) {
       return [];
+    }
+  }
+
+  /// Toggle hide/unhide status of a memory (only owner can toggle)
+  Future<MemoryResult> toggleMemoryHideStatus({
+    required String villageId,
+    required String treeId,
+    required String memoryId,
+    required String userId,
+  }) async {
+    try {
+      final memoryRef = _firestore
+          .collection('villages')
+          .doc(villageId)
+          .collection('trees')
+          .doc(treeId)
+          .collection('memories')
+          .doc(memoryId);
+
+      final memoryDoc = await memoryRef.get();
+      if (!memoryDoc.exists) {
+        return MemoryResult(
+          success: false,
+          message: 'Memory not found',
+        );
+      }
+
+      // Check if user owns the memory
+      final memoryData = memoryDoc.data()!;
+      if (memoryData['addedBy'] != userId) {
+        return MemoryResult(
+          success: false,
+          message: 'You can only hide/unhide your own memories',
+        );
+      }
+
+      // Toggle the isHide status
+      final currentHideStatus = memoryData['isHide'] ?? false;
+      await memoryRef.update({'isHide': !currentHideStatus});
+
+      return MemoryResult(
+        success: true,
+        message: !currentHideStatus
+            ? 'Memory hidden from partner'
+            : 'Memory visible to partner',
+      );
+    } catch (e) {
+      return MemoryResult(
+        success: false,
+        message: 'Error updating memory: ${e.toString()}',
+      );
     }
   }
 

@@ -26,6 +26,44 @@ class MemoryDetailScreen extends ConsumerStatefulWidget {
 class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
   final MemoryService _memoryService = MemoryService();
   bool _isDeleting = false;
+  bool _isTogglingHide = false;
+
+  Future<void> _handleToggleHide() async {
+    setState(() => _isTogglingHide = true);
+
+    final user = ref.read(authServiceProvider).currentUser;
+    if (user == null) return;
+
+    final result = await _memoryService.toggleMemoryHideStatus(
+      villageId: widget.villageId,
+      treeId: widget.treeId,
+      memoryId: widget.memory.id,
+      userId: user.uid,
+    );
+
+    if (!mounted) return;
+
+    setState(() => _isTogglingHide = false);
+
+    if (result.success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.message),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      Navigator.pop(context); // Go back to refresh list
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.message),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
 
   Future<void> _handleDelete() async {
     final confirm = await showDialog<bool>(
@@ -101,11 +139,32 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
           if (widget.isMyMemory)
             Row(
               children: [
+                // Hide/Unhide toggle
+                IconButton(
+                  onPressed: _isTogglingHide ? null : _handleToggleHide,
+                  icon: _isTogglingHide
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : Icon(
+                          widget.memory.isHide
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
+                  tooltip: widget.memory.isHide
+                      ? 'Show to partner'
+                      : 'Hide from partner',
+                ),
                 IconButton(
                   onPressed: () {
-                    //TODO:need to handle eddit memo
+                    //TODO:need to handle edit memo
                   },
-                  icon: Icon(Icons.edit),
+                  icon: const Icon(Icons.edit),
                 ),
                 IconButton(
                   icon: _isDeleting
@@ -198,43 +257,91 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                         ),
                       ],
                     ),
-                    child: Text(
-                      widget.memory.content,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey.shade800,
-                        height: 1.6,
-                      ),
-                    ),
+                    child: widget.memory.isHide && !widget.isMyMemory
+                        ? Column(
+                            children: [
+                              Icon(
+                                Icons.visibility_off,
+                                size: 48,
+                                color: Colors.grey.shade400,
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                'This memory is private',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey.shade600,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ],
+                          )
+                        : Text(
+                            widget.memory.content,
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey.shade800,
+                              height: 1.6,
+                            ),
+                          ),
                   ),
 
                   // Photo if available
+                  // Photo if available
                   if (widget.memory.photoUrl != null) ...[
                     const SizedBox(height: 16),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Image.network(
-                        widget.memory.photoUrl!,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            height: 200,
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade200,
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: const Center(
-                              child: Icon(
-                                Icons.image_not_supported,
-                                size: 50,
-                                color: Colors.grey,
+                    if (widget.memory.isHide && !widget.isMyMemory)
+                      Container(
+                        height: 300,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.photo_library,
+                                size: 60,
+                                color: Colors.grey.shade400,
                               ),
-                            ),
-                          );
-                        },
+                              const SizedBox(height: 8),
+                              Text(
+                                'Photo hidden',
+                                style: TextStyle(
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    else
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Image.network(
+                          widget.memory.photoUrl!,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              height: 200,
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade200,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: const Center(
+                                child: Icon(
+                                  Icons.image_not_supported,
+                                  size: 50,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                       ),
-                    ),
                   ],
 
                   const SizedBox(height: 24),

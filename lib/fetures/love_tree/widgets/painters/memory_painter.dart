@@ -416,15 +416,35 @@ class MemoryPainter {
   }
 
   void _drawStormCloud(Canvas canvas, Size size, int index, int total) {
+    // --- NEW: Create a stable random generator for this cloud ---
+    // We use the 'index' as the seed. This means cloud 'index' 0
+    // will ALWAYS get the same random values, cloud 'index' 1
+    // will always get its own set of random values, etc.
+    // This stops the clouds from flickering!
+    final random = math.Random(index);
+
+    // --- NEW: Calculate a random scale ---
+    final minScale = 0.4;
+    final maxScale = 0.8;
+    // This gives a random value between 0.4 and 0.8
+    final cloudScale = minScale + random.nextDouble() * (maxScale - minScale);
+
     // Position clouds across the top of the screen
     final x = (size.width / (total + 1)) * (index + 1);
-    final y = 80.0 + (index % 2) * 25; // Vary height slightly
 
-    final cloudScale = 0.6;
+    // --- UPDATED: Use our random generator for a better 'y' position ---
+    // This is better than (index % 2) because it looks more natural.
+    // Gives a random height between 70.0 and 120.0
+    final y = 70.0 + random.nextDouble() * 50.0;
+
+    // --- DELETED ---
+    // final cloudScale = 0.6; // We use our new random one instead
+
     final paint = Paint()..style = PaintingStyle.fill;
 
     // Lightning bolt (animated flash)
-    final lightningFlash = (elapsedTime * 2 + index) % 3.0;
+    // We add random.nextDouble() to make the lightning flash at different times
+    final lightningFlash = (elapsedTime * 2 + random.nextDouble() * 3.0) % 3.0;
     final isLightning = lightningFlash < 0.2;
 
     // Animation: vibrate when lightning, gentle drift when not
@@ -444,14 +464,15 @@ class MemoryPainter {
     // Dark fade/shadow around cloud
     final shadowPaint = Paint()
       ..color = const Color(0xFF2D3748).withValues(alpha: 0.3)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 20);
+      // --- UPDATED: Make shadow match the cloud size ---
+      ..maskFilter = MaskFilter.blur(BlurStyle.normal, 15.0 * cloudScale);
     canvas.drawCircle(Offset.zero, 40 * cloudScale, shadowPaint);
 
     // Draw storm cloud using your cloud shape
     canvas.scale(cloudScale);
 
     // Dark storm cloud color
-    paint.color = const Color(0xFF4A5568).withValues(alpha: 0.9);
+    paint.color = const Color(0xFF4A5568).withValues(alpha: 0.7);
 
     // Your exact cloud shape from SkyPainter
     canvas.drawCircle(const Offset(-12, 3), 18, paint);
