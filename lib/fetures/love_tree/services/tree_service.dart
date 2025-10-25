@@ -68,6 +68,7 @@ class TreeService {
       // Check if tree already exists
       final existing = await treeRef.get();
       if (existing.exists) {
+        debugPrint('⚠️ Tree already exists for $monthKey');
         return TreeResult(
           success: false,
           message: 'Tree already exists for this month',
@@ -87,17 +88,21 @@ class TreeService {
         memoryCount: 0,
         isPlanted: false,
         plantedBy: [],
-        createdAt: now,
+        createdAt: now, // Will be overwritten by FieldValue.serverTimestamp()
         lastInteraction: now,
       );
 
+      // ✅ Use toFirestore() for NEW trees (includes createdAt)
       await treeRef.set(tree.toFirestore());
+
+      debugPrint('✅ Created new tree: ${tree.name} for $monthKey');
 
       return TreeResult(
         success: true,
         message: 'New tree created for ${tree.name}',
       );
     } catch (e) {
+      debugPrint('❌ Error creating tree: $e');
       return TreeResult(
         success: false,
         message: 'Failed to create tree: ${e.toString()}',

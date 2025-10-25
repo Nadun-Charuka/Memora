@@ -106,6 +106,8 @@ class LoveTree {
     );
   }
 
+  // REPLACE your toFirestore() method with this:
+
   Map<String, dynamic> toFirestore() {
     return {
       'villageId': villageId,
@@ -119,8 +121,35 @@ class LoveTree {
       'memoryCount': memoryCount,
       'isPlanted': isPlanted,
       'plantedBy': plantedBy,
-      'maxMemories': maxMemories, // NEW: Save to Firestore
+      'maxMemories': maxMemories,
+
+      // ✅ FIX: Add createdAt when creating NEW trees
+      'createdAt': FieldValue.serverTimestamp(),
       'lastInteraction': FieldValue.serverTimestamp(),
+
+      if (completedAt != null) 'completedAt': Timestamp.fromDate(completedAt!),
+    };
+  }
+
+  // ⚠️ IMPORTANT: Also add this method for UPDATING existing trees
+  // (so we don't overwrite createdAt on updates)
+  Map<String, dynamic> toFirestoreUpdate() {
+    return {
+      'villageId': villageId,
+      'name': name,
+      'type': type,
+      'level': level,
+      'height': height,
+      'happiness': happiness,
+      'lovePoints': lovePoints,
+      'stage': stage.name,
+      'memoryCount': memoryCount,
+      'isPlanted': isPlanted,
+      'plantedBy': plantedBy,
+      'maxMemories': maxMemories,
+      'lastInteraction': FieldValue.serverTimestamp(),
+
+      // ❌ DON'T include createdAt in updates
       if (completedAt != null) 'completedAt': Timestamp.fromDate(completedAt!),
     };
   }

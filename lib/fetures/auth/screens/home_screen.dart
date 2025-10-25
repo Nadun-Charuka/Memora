@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -11,6 +12,7 @@ import 'package:memora/fetures/memo/model/memory_model.dart';
 import 'package:memora/fetures/memo/screens/view_all_memo_screen.dart';
 import 'package:memora/fetures/memo/service/memory_service.dart';
 import 'package:memora/fetures/village/model/village_model.dart';
+import 'package:memora/fetures/village/screens/village_history_screen.dart';
 import 'package:memora/fetures/village/service/village_service.dart';
 
 import 'login_screen.dart';
@@ -759,6 +761,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     _showVillageInfo(village);
                   },
                 ),
+
+                // ✨ NEW: Village History Option
+                ListTile(
+                  leading: const Icon(
+                    Icons.forest,
+                    color: Color(0xFF6B9B78),
+                  ),
+                  title: const Text(
+                    'Village History',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  subtitle: const Text(
+                    'View all your trees',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      appFadeScaleRoute(
+                        VillageHistoryScreen(villageId: _villageId!),
+                      ),
+                    );
+                  },
+                ),
+
                 ListTile(
                   leading: const Icon(Icons.history),
                   title: const Text('View All Memories'),
