@@ -7,12 +7,16 @@ class TreeWidget extends StatefulWidget {
   final LoveTree tree;
   final List<Memory> memories;
   final VoidCallback? onMemoryTap;
+  final double groundHeight;
+  final bool needTreeInfo;
 
   const TreeWidget({
     super.key,
     required this.tree,
     required this.memories,
     this.onMemoryTap,
+    this.groundHeight = 0.80,
+    this.needTreeInfo = true,
   });
 
   @override
@@ -84,6 +88,7 @@ class _TreeWidgetState extends State<TreeWidget> with TickerProviderStateMixin {
                   memories: widget.memories,
                   animation: _animationController, // Keep for compatibility
                   elapsedTime: _elapsedSeconds, // NEW: Pass continuous time
+                  groundHeight: widget.groundHeight,
                 ),
               );
             },
@@ -91,17 +96,18 @@ class _TreeWidgetState extends State<TreeWidget> with TickerProviderStateMixin {
         ),
 
         // Compact tree info at bottom
-        Positioned(
-          bottom: 0,
-          left: 0,
-          right: 0,
-          child: AnimatedBuilder(
-            animation: _cardAnimationController,
-            builder: (context, child) {
-              return _buildTreeInfo();
-            },
+        if (widget.needTreeInfo)
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: AnimatedBuilder(
+              animation: _cardAnimationController,
+              builder: (context, child) {
+                return _buildTreeInfo();
+              },
+            ),
           ),
-        ),
       ],
     );
   }

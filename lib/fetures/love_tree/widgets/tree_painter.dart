@@ -13,6 +13,7 @@ class TreePainter extends CustomPainter {
   final List<Memory> memories;
   final Animation<double> animation; // Keep for repaint notification
   final double elapsedTime; // NEW: Continuous time
+  final double? groundHeight;
 
   // Our specialist artist instances
   final SkyPainter skyPainter;
@@ -24,6 +25,7 @@ class TreePainter extends CustomPainter {
     required this.memories,
     required this.animation,
     required this.elapsedTime, // NEW
+    this.groundHeight = 0.80,
   }) : skyPainter = SkyPainter(elapsedTime: elapsedTime), // CHANGED
        memoryPainter = MemoryPainter(
          elapsedTime: elapsedTime, // CHANGED
@@ -61,7 +63,7 @@ class TreePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final centerX = size.width / 2;
-    final groundY = size.height * 0.80;
+    final groundY = size.height * groundHeight!;
 
     // 1. Delegate sky painting
     skyPainter.paint(canvas, size);

@@ -24,6 +24,7 @@ class TreeDetailScreen extends ConsumerStatefulWidget {
 
 class _TreeDetailScreenState extends ConsumerState<TreeDetailScreen> {
   final MemoryService _memoryService = MemoryService();
+  bool _isDetailsExpanded = false;
 
   @override
   Widget build(BuildContext context) {
@@ -37,6 +38,9 @@ class _TreeDetailScreenState extends ConsumerState<TreeDetailScreen> {
         builder: (context, snapshot) {
           final memories = snapshot.data ?? [];
 
+          // ✅ FIX: Sort memories by createdAt descending (latest first)
+          memories.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
           return CustomScrollView(
             slivers: [
               // App Bar
@@ -45,11 +49,13 @@ class _TreeDetailScreenState extends ConsumerState<TreeDetailScreen> {
               // Tree Visualization Section
               SliverToBoxAdapter(
                 child: Container(
-                  height: 400,
+                  height: MediaQuery.of(context).size.height * 0.65,
                   color: Colors.white,
                   child: TreeWidget(
                     tree: widget.tree,
                     memories: memories,
+                    groundHeight: 0.95,
+                    needTreeInfo: false,
                   ),
                 ),
               ),
@@ -59,9 +65,14 @@ class _TreeDetailScreenState extends ConsumerState<TreeDetailScreen> {
                 child: _buildStatsCard(memories),
               ),
 
-              // Tree Info Card
+              // ✨ NEW: Emotion Breakdown Card
               SliverToBoxAdapter(
-                child: _buildTreeInfoCard(),
+                child: _buildEmotionBreakdownCard(memories),
+              ),
+
+              // Tree Info Card (Expandable)
+              SliverToBoxAdapter(
+                child: _buildExpandableTreeInfoCard(),
               ),
 
               // Memory Preview Section
@@ -87,7 +98,6 @@ class _TreeDetailScreenState extends ConsumerState<TreeDetailScreen> {
 
   Widget _buildSliverAppBar() {
     return SliverAppBar(
-      expandedHeight: 120,
       floating: false,
       pinned: true,
       backgroundColor: _getTreeColor(),
@@ -101,8 +111,10 @@ class _TreeDetailScreenState extends ConsumerState<TreeDetailScreen> {
             Text(
               widget.tree.name,
               style: const TextStyle(
-                fontSize: 18,
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
+                color: Colors.white,
+                // color: Colors.black87,
               ),
             ),
             Text(
@@ -110,6 +122,8 @@ class _TreeDetailScreenState extends ConsumerState<TreeDetailScreen> {
               style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.normal,
+                color: Colors.white70,
+                // color: Colors.black54,
               ),
             ),
           ],
@@ -129,7 +143,6 @@ class _TreeDetailScreenState extends ConsumerState<TreeDetailScreen> {
         ),
       ),
       actions: [
-        // Stage badge
         Center(
           child: Container(
             margin: const EdgeInsets.only(right: 16),
@@ -166,7 +179,7 @@ class _TreeDetailScreenState extends ConsumerState<TreeDetailScreen> {
     final mostUsedEmotion = _getMostUsedEmotion(emotionCounts);
 
     return Container(
-      margin: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -214,6 +227,7 @@ class _TreeDetailScreenState extends ConsumerState<TreeDetailScreen> {
                   color: Colors.pink.shade400,
                 ),
               ),
+              const SizedBox(width: 10),
               Expanded(
                 child: _buildStatItem(
                   icon: Icons.star,
@@ -235,6 +249,7 @@ class _TreeDetailScreenState extends ConsumerState<TreeDetailScreen> {
                   color: Colors.blue.shade400,
                 ),
               ),
+              const SizedBox(width: 10),
               Expanded(
                 child: _buildStatItem(
                   icon: Icons.emoji_emotions,
@@ -329,6 +344,315 @@ class _TreeDetailScreenState extends ConsumerState<TreeDetailScreen> {
     );
   }
 
+  // ✨ NEW: Emotion Breakdown Card
+  Widget _buildEmotionBreakdownCard(List<Memory> memories) {
+    if (memories.isEmpty) return const SizedBox.shrink();
+
+    final emotionCounts = _countEmotions(memories);
+    final totalMemories = memories.length;
+
+    // Sort emotions by count (descending)
+    final sortedEmotions = emotionCounts.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    // Filter out emotions with 0 count
+    final usedEmotions = sortedEmotions.where((e) => e.value > 0).toList();
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            _getTreeColor().withValues(alpha: 0.1),
+            _getTreeColor().withValues(alpha: 0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: _getTreeColor().withValues(alpha: 0.3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.pie_chart,
+                color: _getTreeColor(),
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Emotion Summary',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey.shade800,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '$totalMemories total',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: _getTreeColor(),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'How was your month together? 💭',
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.grey.shade600,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Emotion bars
+          ...usedEmotions.map((entry) {
+            final emotion = entry.key;
+            final count = entry.value;
+            final percentage = (count / totalMemories * 100).toInt();
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _buildEmotionBar(
+                emotion: emotion,
+                count: count,
+                percentage: percentage,
+                totalMemories: totalMemories,
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmotionBar({
+    required MemoryEmotion emotion,
+    required int count,
+    required int percentage,
+    required int totalMemories,
+  }) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            // Emotion icon
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: _getEmotionColor(emotion).withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Center(
+                child: Text(
+                  emotion.icon,
+                  style: const TextStyle(fontSize: 16),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+
+            // Emotion name
+            Expanded(
+              flex: 2,
+              child: Text(
+                _getEmotionDisplayName(emotion),
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey.shade700,
+                ),
+              ),
+            ),
+
+            // Progress bar
+            Expanded(
+              flex: 4,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: LinearProgressIndicator(
+                  value: count / totalMemories,
+                  backgroundColor: Colors.grey.shade200,
+                  color: _getEmotionColor(emotion),
+                  minHeight: 8,
+                ),
+              ),
+            ),
+
+            const SizedBox(width: 10),
+
+            // Count and percentage
+            SizedBox(
+              width: 60,
+              child: Text(
+                '$count ($percentage%)',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: _getEmotionColor(emotion),
+                ),
+                textAlign: TextAlign.right,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // ✨ NEW: Expandable Tree Info Card
+  Widget _buildExpandableTreeInfoCard() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Header (Always visible)
+          InkWell(
+            onTap: () {
+              setState(() {
+                _isDetailsExpanded = !_isDetailsExpanded;
+              });
+            },
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    color: _getTreeColor(),
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Tree Details',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade800,
+                    ),
+                  ),
+                  const Spacer(),
+                  Icon(
+                    _isDetailsExpanded ? Icons.expand_less : Icons.expand_more,
+                    color: Colors.grey.shade600,
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Expandable content
+          if (_isDetailsExpanded) ...[
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  _buildInfoRow(
+                    icon: Icons.calendar_today,
+                    label: 'Created On',
+                    value: DateFormat('EEEE, MMM d, yyyy').format(
+                      widget.tree.createdAt,
+                    ),
+                  ),
+                  const Divider(height: 24),
+                  _buildInfoRow(
+                    icon: Icons.history,
+                    label: 'Last Active',
+                    value: DateFormat('EEEE, MMM d, yyyy • h:mm a').format(
+                      widget.tree.lastInteraction,
+                    ),
+                  ),
+                  const Divider(height: 24),
+                  _buildInfoRow(
+                    icon: Icons.forest,
+                    label: 'Tree Type',
+                    value: widget.tree.type,
+                  ),
+                  const Divider(height: 24),
+                  _buildInfoRow(
+                    icon: Icons.height,
+                    label: 'Tree Height',
+                    value: '${widget.tree.height.toStringAsFixed(1)} units',
+                  ),
+                  const Divider(height: 24),
+                  _buildInfoRow(
+                    icon: Icons.favorite,
+                    label: 'Happiness Level',
+                    value:
+                        '${(widget.tree.happiness * 100).toStringAsFixed(0)}%',
+                  ),
+                  if (widget.tree.isPlanted) ...[
+                    const Divider(height: 24),
+                    _buildInfoRow(
+                      icon: Icons.check_circle,
+                      label: 'Status',
+                      value: widget.tree.isCompleted
+                          ? 'Completed 🎉'
+                          : 'Growing 🌱',
+                    ),
+                  ],
+                  if (widget.tree.completedAt != null) ...[
+                    const Divider(height: 24),
+                    _buildInfoRow(
+                      icon: Icons.emoji_events,
+                      label: 'Completed On',
+                      value: DateFormat('EEEE, MMM d, yyyy').format(
+                        widget.tree.completedAt!,
+                      ),
+                    ),
+                  ],
+                  if (!widget.tree.isCompleted) ...[
+                    const Divider(height: 24),
+                    _buildInfoRow(
+                      icon: Icons.timelapse,
+                      label: 'Remaining Memories',
+                      value:
+                          '${widget.tree.remainingMemories} more to complete',
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   Widget _buildStatItem({
     required IconData icon,
     required String label,
@@ -365,61 +689,13 @@ class _TreeDetailScreenState extends ConsumerState<TreeDetailScreen> {
     );
   }
 
-  Widget _buildTreeInfoCard() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          _buildInfoRow(
-            icon: Icons.calendar_today,
-            label: 'Created',
-            value: DateFormat('MMM d, yyyy').format(widget.tree.createdAt),
-          ),
-          const Divider(height: 24),
-          _buildInfoRow(
-            icon: Icons.history,
-            label: 'Last Activity',
-            value: DateFormat(
-              'MMM d, yyyy',
-            ).format(widget.tree.lastInteraction),
-          ),
-          const Divider(height: 24),
-          _buildInfoRow(
-            icon: Icons.forest,
-            label: 'Tree Type',
-            value: widget.tree.type,
-          ),
-          if (widget.tree.isPlanted) ...[
-            const Divider(height: 24),
-            _buildInfoRow(
-              icon: Icons.check_circle,
-              label: 'Status',
-              value: widget.tree.isPlanted ? 'Planted' : 'Not Planted',
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
   Widget _buildInfoRow({
     required IconData icon,
     required String label,
     required String value,
   }) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
           width: 40,
@@ -442,13 +718,14 @@ class _TreeDetailScreenState extends ConsumerState<TreeDetailScreen> {
                   color: Colors.grey.shade600,
                 ),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 4),
               Text(
                 value,
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: Colors.grey.shade800,
+                  height: 1.3,
                 ),
               ),
             ],
@@ -506,8 +783,8 @@ class _TreeDetailScreenState extends ConsumerState<TreeDetailScreen> {
       );
     }
 
-    // Show latest 3 memories
-    final recentMemories = memories.take(3).toList();
+    // Show latest 4 memories (already sorted)
+    final recentMemories = memories.take(4).toList();
 
     return Container(
       margin: const EdgeInsets.all(16),
@@ -761,6 +1038,29 @@ class _TreeDetailScreenState extends ConsumerState<TreeDetailScreen> {
   MemoryEmotion _getMostUsedEmotion(Map<MemoryEmotion, int> counts) {
     if (counts.isEmpty) return MemoryEmotion.happy;
     return counts.entries.reduce((a, b) => a.value > b.value ? a : b).key;
+  }
+
+  String _getEmotionDisplayName(MemoryEmotion emotion) {
+    switch (emotion) {
+      case MemoryEmotion.love:
+        return 'Love';
+      case MemoryEmotion.happy:
+        return 'Happy';
+      case MemoryEmotion.joyful:
+        return 'Joyful';
+      case MemoryEmotion.excited:
+        return 'Excited';
+      case MemoryEmotion.grateful:
+        return 'Grateful';
+      case MemoryEmotion.peaceful:
+        return 'Peaceful';
+      case MemoryEmotion.nostalgic:
+        return 'Nostalgic';
+      case MemoryEmotion.sad:
+        return 'Sad';
+      case MemoryEmotion.awful:
+        return 'Awful';
+    }
   }
 
   Color _getEmotionColor(MemoryEmotion emotion) {

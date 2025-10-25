@@ -104,7 +104,12 @@ class _VillageHistoryScreenState extends ConsumerState<VillageHistoryScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF6B9B78),
         foregroundColor: Colors.white,
-        title: const Text('Love Village History'),
+        title: const Text(
+          'Love Village History',
+          style: TextStyle(
+            color: Colors.white,
+          ),
+        ),
       ),
       body: const Center(
         child: CircularProgressIndicator(
@@ -120,7 +125,12 @@ class _VillageHistoryScreenState extends ConsumerState<VillageHistoryScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF6B9B78),
         foregroundColor: Colors.white,
-        title: const Text('Love Village History'),
+        title: const Text(
+          'Love Village History',
+          style: TextStyle(
+            color: Colors.white,
+          ),
+        ),
       ),
       body: Center(
         child: Column(
@@ -156,7 +166,7 @@ class _VillageHistoryScreenState extends ConsumerState<VillageHistoryScreen> {
 
   Widget _buildSliverAppBar(int treeCount) {
     return SliverAppBar(
-      expandedHeight: 120,
+      // expandedHeight: 120,
       floating: false,
       pinned: true,
       backgroundColor: const Color(0xFF6B9B78),
@@ -172,6 +182,7 @@ class _VillageHistoryScreenState extends ConsumerState<VillageHistoryScreen> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
+                color: Colors.white,
               ),
             ),
             Text(
@@ -179,6 +190,7 @@ class _VillageHistoryScreenState extends ConsumerState<VillageHistoryScreen> {
               style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.normal,
+                color: Colors.white60,
               ),
             ),
           ],

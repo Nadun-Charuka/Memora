@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -413,57 +412,384 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildHeader(Village village) {
     return Container(
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 8,
-        left: 16,
-        right: 16,
-        bottom: 16,
-      ),
+      height: kToolbarHeight + MediaQuery.of(context).padding.top,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFF9B85C0).withValues(alpha: 0.9),
-            const Color(0xFFE8B4D9).withValues(alpha: 0.9),
+            const Color(0xFF9B85C0),
+            const Color(0xFFE8B4D9),
           ],
         ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  village.name,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${village.partner1Name} 💞 ${village.partner2Name ?? "Waiting..."}',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.white.withValues(alpha: 0.9),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            icon: const Icon(
-              Icons.more_vert,
-              color: Colors.white,
-            ),
-            onPressed: () => _showOptionsMenu(village),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF9B85C0).withValues(alpha: 0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            children: [
+              // Left: Village Info Button
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => _showVillageInfo(village),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Dual Avatar (both partners)
+                        SizedBox(
+                          width: 36,
+                          height: 28,
+                          child: Stack(
+                            children: [
+                              // Partner 1
+                              Positioned(
+                                left: 0,
+                                child: Container(
+                                  width: 28,
+                                  height: 28,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      village.partner1Name
+                                          .substring(0, 1)
+                                          .toUpperCase(),
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: const Color(0xFF9B85C0),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              // Partner 2
+                              if (village.partner2Name != null)
+                                Positioned(
+                                  right: 0,
+                                  child: Container(
+                                    width: 28,
+                                    height: 28,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 2,
+                                      ),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        village.partner2Name!
+                                            .substring(0, 1)
+                                            .toUpperCase(),
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: const Color(0xFFE8B4D9),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+
+                        // Village Name
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 100),
+                          child: Text(
+                            village.name,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // Center: App Branding
+              Expanded(
+                child: Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Logo
+                      Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.25),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Center(
+                          child: Text(
+                            '💞',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+
+                      // App Name with gradient text effect
+                      ShaderMask(
+                        shaderCallback: (bounds) => LinearGradient(
+                          colors: [
+                            Colors.white,
+                            Colors.white.withValues(alpha: 0.8),
+                          ],
+                        ).createShader(bounds),
+                        child: const Text(
+                          'Memora',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            letterSpacing: 1.5,
+                            fontFamily: 'serif',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Right: Menu Button
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => _showOptionsMenu(village),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.menu,
+                      color: Colors.white,
+                      size: 22,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ✨ BONUS: Enhanced Village Info Dialog
+  void _showVillageInfo(Village village) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                const Color(0xFF9B85C0).withValues(alpha: 0.1),
+                const Color(0xFFE8B4D9).withValues(alpha: 0.1),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
+              Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [
+                          Color(0xFF9B85C0),
+                          Color(0xFFE8B4D9),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.favorite,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          village.name,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade800,
+                          ),
+                        ),
+                        Text(
+                          'Your Love Village',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              // Stats
+              _buildVillageInfoRow(
+                icon: Icons.people,
+                label: 'Partners',
+                value:
+                    '${village.partner1Name} & ${village.partner2Name ?? "..."}',
+              ),
+              const SizedBox(height: 16),
+              _buildVillageInfoRow(
+                icon: Icons.calendar_today,
+                label: 'Created',
+                value: DateFormat('MMM d, yyyy').format(village.createdAt),
+              ),
+              const SizedBox(height: 16),
+              _buildVillageInfoRow(
+                icon: Icons.star,
+                label: 'Love Points',
+                value: '${village.totalLovePoints}',
+              ),
+              const SizedBox(height: 16),
+              _buildVillageInfoRow(
+                icon: Icons.local_fire_department,
+                label: 'Current Streak',
+                value: '${village.currentStreak} days',
+              ),
+              const SizedBox(height: 24),
+
+              // Close Button
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: FilledButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF9B85C0),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text('Close'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVillageInfoRow({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Row(
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: const Color(0xFF9B85C0).withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(
+            icon,
+            color: const Color(0xFF9B85C0),
+            size: 20,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey.shade800,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -725,99 +1051,224 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void _showOptionsMenu(Village village) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) => Consumer(
         builder: (context, ref, _) {
           final user = ref.read(authServiceProvider).currentUser;
           return Container(
-            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                ListTile(
-                  leading: const Icon(Icons.person_2_outlined),
-                  title: RichText(
-                    text: TextSpan(
-                      style: const TextStyle(color: Colors.black, fontSize: 18),
-                      children: [
-                        const TextSpan(text: 'Account Name: '),
-                        TextSpan(
-                          text: user == null
-                              ? "Loading..."
-                              : (user.displayName ?? "?"),
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                // Drag Handle
+                Container(
+                  margin: const EdgeInsets.only(top: 12, bottom: 8),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+
+                // Header Section
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      // Profile Avatar
+                      Container(
+                        width: 70,
+                        height: 70,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Color(0xFF9B85C0),
+                              Color(0xFFE8B4D9),
+                            ],
+                          ),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(
+                                0xFF9B85C0,
+                              ).withValues(alpha: 0.3),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.info_outline),
-                  title: const Text('About Village'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _showVillageInfo(village);
-                  },
-                ),
-
-                // ✨ NEW: Village History Option
-                ListTile(
-                  leading: const Icon(
-                    Icons.forest,
-                    color: Color(0xFF6B9B78),
-                  ),
-                  title: const Text(
-                    'Village History',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  subtitle: const Text(
-                    'View all your trees',
-                    style: TextStyle(fontSize: 12),
-                  ),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      appFadeScaleRoute(
-                        VillageHistoryScreen(villageId: _villageId!),
+                        child: Center(
+                          child: Text(
+                            user?.displayName?.substring(0, 1).toUpperCase() ??
+                                '?',
+                            style: const TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
                       ),
-                    );
-                  },
+                      const SizedBox(height: 12),
+
+                      // User Name
+                      Text(
+                        user?.displayName ?? 'User',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade800,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+
+                      // Email
+                      if (user?.email != null)
+                        Text(
+                          user!.email!,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
 
-                ListTile(
-                  leading: const Icon(Icons.history),
-                  title: const Text('View All Memories'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _navigateToAllMemories();
-                  },
+                // Divider
+                Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: Colors.grey.shade200,
                 ),
-                ListTile(
-                  leading: const Icon(Icons.settings),
-                  title: const Text('Settings'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    // TODO: Navigate to settings
-                  },
-                ),
-                const Divider(),
-                ListTile(
-                  leading: const Icon(Icons.logout, color: Colors.red),
-                  title: const Text(
-                    'Sign Out',
-                    style: TextStyle(color: Colors.red),
+
+                // Menu Options
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
                   ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _handleSignOut();
-                  },
+                  child: Column(
+                    children: [
+                      // Village Info
+                      _buildMenuTile(
+                        context: context,
+                        icon: Icons.info_outline,
+                        iconColor: const Color(0xFF6B9B78),
+                        iconBgColor: const Color(
+                          0xFF6B9B78,
+                        ).withValues(alpha: 0.1),
+                        title: 'About Village',
+                        subtitle: village.name,
+                        onTap: () {
+                          Navigator.pop(context);
+                          _showVillageInfo(village);
+                        },
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      // Village History
+                      _buildMenuTile(
+                        context: context,
+                        icon: Icons.forest,
+                        iconColor: const Color(0xFF8B7355),
+                        iconBgColor: const Color(
+                          0xFF8B7355,
+                        ).withValues(alpha: 0.1),
+                        title: 'Village History',
+                        subtitle: 'View all your trees',
+                        trailing: const Icon(
+                          Icons.chevron_right,
+                          color: Color(0xFF8B7355),
+                        ),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            appFadeScaleRoute(
+                              VillageHistoryScreen(villageId: _villageId!),
+                            ),
+                          );
+                        },
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      // View All Memories
+                      _buildMenuTile(
+                        context: context,
+                        icon: Icons.photo_library,
+                        iconColor: const Color(0xFF9B85C0),
+                        iconBgColor: const Color(
+                          0xFF9B85C0,
+                        ).withValues(alpha: 0.1),
+                        title: 'All Memories',
+                        subtitle: 'View current month memories',
+                        onTap: () {
+                          Navigator.pop(context);
+                          _navigateToAllMemories();
+                        },
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      // Profile
+                      _buildMenuTile(
+                        context: context,
+                        icon: Icons.person,
+                        iconColor: Colors.blue.shade600,
+                        iconBgColor: Colors.blue.withValues(alpha: 0.1),
+                        title: 'Profile',
+                        subtitle: 'Edit your profile',
+                        onTap: () {
+                          Navigator.pop(context);
+                          // TODO: Navigate to profile
+                        },
+                      ),
+                    ],
+                  ),
                 ),
+
+                // Divider
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Divider(
+                    height: 24,
+                    thickness: 1,
+                    color: Colors.grey.shade200,
+                  ),
+                ),
+
+                // Sign Out Button
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                  child: _buildMenuTile(
+                    context: context,
+                    icon: Icons.logout,
+                    iconColor: Colors.red.shade600,
+                    iconBgColor: Colors.red.withValues(alpha: 0.1),
+                    title: 'Sign Out',
+                    subtitle: 'Logout from your account',
+                    titleColor: Colors.red.shade600,
+                    onTap: () {
+                      Navigator.pop(context);
+                      _handleSignOut();
+                    },
+                  ),
+                ),
+
+                // Bottom Safe Area
+                SizedBox(height: MediaQuery.of(context).padding.bottom + 8),
               ],
             ),
           );
@@ -826,46 +1277,90 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  void _showVillageInfo(Village village) {
-    showSmoothDialog(
-      context: context,
-      dialog: AlertDialog(
-        title: Text(village.name),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildInfoRow(
-              'Created',
-              DateFormat('MMM d, yyyy').format(village.createdAt),
+  // ✨ NEW: Beautiful Menu Tile Widget
+  Widget _buildMenuTile({
+    required BuildContext context,
+    required IconData icon,
+    required Color iconColor,
+    required Color iconBgColor,
+    required String title,
+    String? subtitle,
+    Color? titleColor,
+    Widget? trailing,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: Colors.grey.shade200,
+              width: 1,
             ),
-            _buildInfoRow('Status', village.status.name),
-            _buildInfoRow('Love Points', '${village.totalLovePoints}'),
-            _buildInfoRow('Current Streak', '${village.currentStreak} days'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+            borderRadius: BorderRadius.circular(16),
           ),
-        ],
-      ),
-    );
-  }
+          child: Row(
+            children: [
+              // Icon
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: iconBgColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  icon,
+                  color: iconColor,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 16),
 
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(fontWeight: FontWeight.w500),
+              // Title & Subtitle
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: titleColor ?? Colors.grey.shade800,
+                      ),
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+
+              // Trailing
+              if (trailing != null)
+                trailing
+              else
+                Icon(
+                  Icons.arrow_forward_ios,
+                  size: 16,
+                  color: Colors.grey.shade400,
+                ),
+            ],
           ),
-          Text(value),
-        ],
+        ),
       ),
     );
   }
