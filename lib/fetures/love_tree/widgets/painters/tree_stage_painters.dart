@@ -166,7 +166,7 @@ class SeedlingPainter extends TreeStagePainter {
   }
 }
 
-// 3. Growing State - Young tree with spreading branches
+// 3. Growing State - Energetic young tree with wild, asymmetric growth
 class GrowingPainter extends TreeStagePainter {
   GrowingPainter({required super.elapsedTime, required super.tree});
 
@@ -175,31 +175,127 @@ class GrowingPainter extends TreeStagePainter {
     groundPainter.paint(canvas, size, groundY);
 
     final trunkHeight = tree.height * 1.5;
-    final windSway = math.sin(elapsedTime * math.pi * 2) * 2;
+    final windSway = math.sin(elapsedTime * math.pi) * 2.5;
 
-    // Draw broader trunk
-    _drawYoungTrunk(canvas, centerX, groundY, trunkHeight, 10, windSway);
+    // Draw young, slightly bent trunk
+    _drawYouthfulTrunk(canvas, centerX, groundY, trunkHeight, 12, windSway);
 
-    // Draw spreading branches with more foliage
+    // Asymmetric, wild branches - like a young tree growing freely
     final branches = [
-      {'y': 0.35, 'length': 45.0, 'angle': -0.9, 'leaves': 12},
-      {'y': 0.38, 'length': 45.0, 'angle': 0.9, 'leaves': 12},
-      {'y': 0.55, 'length': 50.0, 'angle': -0.7, 'leaves': 14},
-      {'y': 0.58, 'length': 50.0, 'angle': 0.7, 'leaves': 14},
-      {'y': 0.75, 'length': 40.0, 'angle': -0.6, 'leaves': 10},
-      {'y': 0.78, 'length': 40.0, 'angle': 0.6, 'leaves': 10},
-      {'y': 0.9, 'length': 30.0, 'angle': 0.0, 'leaves': 8},
+      // Lower branches - thicker, spreading wide
+      {
+        'y': 0.3,
+        'length': 55.0,
+        'angle': -1.1,
+        'width': 4.5,
+        'leaves': 16,
+        'twigs': 2,
+      },
+      {
+        'y': 0.33,
+        'length': 48.0,
+        'angle': 0.85,
+        'width': 4.0,
+        'leaves': 14,
+        'twigs': 2,
+      },
+
+      // Middle branches - medium spread
+      {
+        'y': 0.48,
+        'length': 52.0,
+        'angle': -0.9,
+        'width': 3.8,
+        'leaves': 15,
+        'twigs': 2,
+      },
+      {
+        'y': 0.51,
+        'length': 58.0,
+        'angle': 0.75,
+        'width': 4.2,
+        'leaves': 17,
+        'twigs': 2,
+      },
+      {
+        'y': 0.62,
+        'length': 45.0,
+        'angle': -0.7,
+        'width': 3.5,
+        'leaves': 13,
+        'twigs': 1,
+      },
+      {
+        'y': 0.65,
+        'length': 50.0,
+        'angle': 0.8,
+        'width': 3.7,
+        'leaves': 14,
+        'twigs': 2,
+      },
+
+      // Upper branches - reaching upward
+      {
+        'y': 0.75,
+        'length': 42.0,
+        'angle': -0.55,
+        'width': 3.2,
+        'leaves': 11,
+        'twigs': 1,
+      },
+      {
+        'y': 0.78,
+        'length': 38.0,
+        'angle': 0.6,
+        'width': 3.0,
+        'leaves': 10,
+        'twigs': 1,
+      },
+      {
+        'y': 0.86,
+        'length': 35.0,
+        'angle': -0.4,
+        'width': 2.8,
+        'leaves': 9,
+        'twigs': 1,
+      },
+      {
+        'y': 0.89,
+        'length': 32.0,
+        'angle': 0.3,
+        'width': 2.5,
+        'leaves': 8,
+        'twigs': 1,
+      },
+
+      // Top branches - small, upward reaching
+      {
+        'y': 0.94,
+        'length': 28.0,
+        'angle': -0.2,
+        'width': 2.2,
+        'leaves': 6,
+        'twigs': 0,
+      },
+      {
+        'y': 0.96,
+        'length': 25.0,
+        'angle': 0.15,
+        'width': 2.0,
+        'leaves': 5,
+        'twigs': 0,
+      },
     ];
 
     for (var branchData in branches) {
       final y = groundY - trunkHeight * (branchData['y'] as double);
       final branchSway = windSway * (1.0 - (branchData['y'] as double));
       final startOffset = Offset(centerX + branchSway, y);
-      _drawSpreadingBranch(canvas, startOffset, branchData, elapsedTime);
+      _drawEnergeticBranch(canvas, startOffset, branchData, elapsedTime);
     }
   }
 
-  void _drawYoungTrunk(
+  void _drawYouthfulTrunk(
     Canvas canvas,
     double centerX,
     double groundY,
@@ -215,9 +311,10 @@ class GrowingPainter extends TreeStagePainter {
             colors: [
               const Color(0xFF6D4C41),
               const Color(0xFF8D6E63),
-              const Color(0xFF5D4037),
+              const Color(0xFF7D5E54),
+              const Color(0xFF6D4C41),
             ],
-            stops: [0.0, 0.5, 1.0],
+            stops: [0.0, 0.3, 0.7, 1.0],
           ).createShader(
             Rect.fromLTWH(
               centerX - width,
@@ -227,33 +324,61 @@ class GrowingPainter extends TreeStagePainter {
             ),
           );
 
+    // Slightly curved trunk showing youthful flexibility
     final path = Path()
-      ..moveTo(centerX - width * 0.8, groundY + 3)
-      ..lineTo(centerX - width * 0.4, groundY - 5)
-      ..lineTo(centerX - width * 0.3 + sway, groundY - height)
-      ..lineTo(centerX + width * 0.3 + sway, groundY - height)
-      ..lineTo(centerX + width * 0.4, groundY - 5)
-      ..lineTo(centerX + width * 0.8, groundY + 3)
+      ..moveTo(centerX - width * 0.7, groundY + 3)
+      ..quadraticBezierTo(
+        centerX - width * 0.5,
+        groundY - height * 0.2,
+        centerX - width * 0.4 + sway * 0.5,
+        groundY - height * 0.5,
+      )
+      ..quadraticBezierTo(
+        centerX - width * 0.3 + sway * 0.8,
+        groundY - height * 0.75,
+        centerX - width * 0.28 + sway,
+        groundY - height,
+      )
+      ..lineTo(centerX + width * 0.28 + sway, groundY - height)
+      ..quadraticBezierTo(
+        centerX + width * 0.3 + sway * 0.8,
+        groundY - height * 0.75,
+        centerX + width * 0.4 + sway * 0.5,
+        groundY - height * 0.5,
+      )
+      ..quadraticBezierTo(
+        centerX + width * 0.5,
+        groundY - height * 0.2,
+        centerX + width * 0.7,
+        groundY + 3,
+      )
       ..close();
 
     canvas.drawPath(path, trunkPaint);
 
-    // Bark texture
+    // Young bark texture - less pronounced
     final barkPaint = Paint()
-      ..color = Colors.black.withValues(alpha: 0.2)
+      ..color = Colors.black.withValues(alpha: 0.15)
       ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke;
 
-    for (double i = 0; i < height; i += 12) {
+    for (double i = 0; i < height; i += 20) {
+      final curve = math.sin(i * 0.3) * 2;
       canvas.drawLine(
-        Offset(centerX - width * 0.3, groundY - i),
-        Offset(centerX + width * 0.2, groundY - i - 8),
+        Offset(centerX - width * 0.25 + curve, groundY - i),
+        Offset(centerX + width * 0.2 + curve, groundY - i - 10),
         barkPaint,
       );
     }
+
+    // Add some green tint to show vitality
+    final vitalityPaint = Paint()
+      ..color = const Color(0xFF7CB342).withValues(alpha: 0.08)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+    canvas.drawPath(path, vitalityPaint);
   }
 
-  void _drawSpreadingBranch(
+  void _drawEnergeticBranch(
     Canvas canvas,
     Offset start,
     Map<String, dynamic> branchData,
@@ -261,242 +386,28 @@ class GrowingPainter extends TreeStagePainter {
   ) {
     final length = branchData['length'] as double;
     final angle = branchData['angle'] as double;
+    final width = branchData['width'] as double;
     final leafCount = branchData['leaves'] as int;
+    final twigCount = branchData['twigs'] as int;
 
+    // Main branch with slight curve
     final branchPaint = Paint()
-      ..color = const Color(0xFF6D4C41)
-      ..strokeWidth = 5
+      ..strokeWidth = width
       ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-
-    final endPoint = Offset(
-      start.dx + length * math.sin(angle),
-      start.dy - length * math.cos(angle),
-    );
-
-    canvas.drawLine(start, endPoint, branchPaint);
-
-    // Draw leaf cluster at branch end
-    _drawLeafCluster(canvas, endPoint, leafCount, 18, angle, elapsedTime);
-  }
-
-  void _drawLeafCluster(
-    Canvas canvas,
-    Offset center,
-    int count,
-    double size,
-    double baseAngle,
-    double elapsedTime,
-  ) {
-    final clusterRandom = math.Random(center.dx.toInt());
-
-    for (int i = 0; i < count; i++) {
-      final angle = baseAngle + (clusterRandom.nextDouble() - 0.5) * 3.0;
-      final distance = clusterRandom.nextDouble() * size * 1.2;
-      final rustle = math.sin(elapsedTime * math.pi * 4 + i) * 3;
-
-      final leafPos = Offset(
-        center.dx + math.cos(angle) * distance + rustle,
-        center.dy + math.sin(angle) * distance,
-      );
-
-      final leafSize = size * (0.8 + clusterRandom.nextDouble() * 0.4);
-      final leafRotation = angle + (clusterRandom.nextDouble() - 0.5) * 1.5;
-      _drawThinLongLeaf(canvas, leafPos, leafSize, leafRotation);
-    }
-  }
-
-  void _drawThinLongLeaf(
-    Canvas canvas,
-    Offset center,
-    double length,
-    double rotation,
-  ) {
-    canvas.save();
-    canvas.translate(center.dx, center.dy);
-    canvas.rotate(rotation);
-
-    // Thin, elongated leaf shape
-    final leafPaint = Paint()
-      ..style = PaintingStyle.fill
+      ..style = PaintingStyle.stroke
       ..shader =
           LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
             colors: [
-              const Color(0xFF9CCC65), // Light green
-              const Color(0xFF7CB342), // Medium light green
-              const Color(0xFF689F38), // Slightly darker
-            ],
-            stops: [0.0, 0.5, 1.0],
-          ).createShader(
-            Rect.fromLTWH(-length * 0.1, -length * 0.5, length * 0.2, length),
-          );
-
-    // Thin, elongated leaf path
-    final path = Path()
-      ..moveTo(0, -length * 0.5) // Tip
-      ..quadraticBezierTo(
-        length * 0.08,
-        -length * 0.2,
-        length * 0.1,
-        0,
-      ) // Right side
-      ..quadraticBezierTo(
-        length * 0.08,
-        length * 0.2,
-        0,
-        length * 0.5,
-      ) // Bottom tip
-      ..quadraticBezierTo(
-        -length * 0.08,
-        length * 0.2,
-        -length * 0.1,
-        0,
-      ) // Left side
-      ..quadraticBezierTo(
-        -length * 0.08,
-        -length * 0.2,
-        0,
-        -length * 0.5,
-      ); // Back to tip
-    canvas.drawPath(path, leafPaint);
-
-    // Central vein (midrib)
-    final veinPaint = Paint()
-      ..color = const Color(0xFF558B2F).withValues(alpha: 0.5)
-      ..strokeWidth = 0.8
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-
-    canvas.drawLine(
-      Offset(0, -length * 0.5),
-      Offset(0, length * 0.5),
-      veinPaint,
-    );
-
-    canvas.restore();
-  }
-}
-
-// 4. Blooming State - Tree with flowers
-class BloomingPainter extends TreeStagePainter {
-  BloomingPainter({required super.elapsedTime, required super.tree});
-
-  @override
-  void paint(Canvas canvas, Size size, double centerX, double groundY) {
-    groundPainter.paint(canvas, size, groundY);
-
-    final trunkHeight = tree.height * 1.2;
-    final windSway = math.sin(elapsedTime * math.pi * 2) * 3;
-
-    // Draw mature trunk
-    _drawMatureTrunk(canvas, centerX, groundY, trunkHeight, 18, windSway);
-
-    // Draw flowering branches
-    final branches = [
-      {'y': 0.25, 'length': 70.0, 'angle': -1.0, 'flowers': 12},
-      {'y': 0.28, 'length': 70.0, 'angle': 1.0, 'flowers': 12},
-      {'y': 0.45, 'length': 65.0, 'angle': -0.8, 'flowers': 10},
-      {'y': 0.48, 'length': 65.0, 'angle': 0.8, 'flowers': 10},
-      {'y': 0.65, 'length': 55.0, 'angle': -0.7, 'flowers': 8},
-      {'y': 0.68, 'length': 55.0, 'angle': 0.7, 'flowers': 8},
-      {'y': 0.82, 'length': 45.0, 'angle': -0.5, 'flowers': 6},
-      {'y': 0.85, 'length': 45.0, 'angle': 0.5, 'flowers': 6},
-      {'y': 0.99, 'length': 45.0, 'angle': 0.1, 'flowers': 6},
-      {'y': 0.99, 'length': 45.0, 'angle': -0.1, 'flowers': 6},
-    ];
-
-    for (var branchData in branches) {
-      final y = groundY - trunkHeight * (branchData['y'] as double);
-      final branchSway = windSway * (1.0 - (branchData['y'] as double));
-      final startOffset = Offset(centerX + branchSway, y);
-      _drawFloweringBranch(canvas, startOffset, branchData, elapsedTime);
-    }
-  }
-
-  void _drawMatureTrunk(
-    Canvas canvas,
-    double centerX,
-    double groundY,
-    double height,
-    double width,
-    double sway,
-  ) {
-    final trunkPaint = Paint()
-      ..shader =
-          LinearGradient(
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-            colors: [
-              const Color(0xFF5D4037),
-              const Color(0xFF8D6E63),
               const Color(0xFF6D4C41),
+              const Color(0xFF8D6E63),
+              const Color(0xFF9D7E73),
             ],
           ).createShader(
-            Rect.fromLTWH(
-              centerX - width,
-              groundY - height,
-              width * 2,
-              height,
-            ),
+            Rect.fromPoints(start, Offset(start.dx + 100, start.dy + 100)),
           );
 
-    final path = Path()
-      ..moveTo(centerX - width, groundY + 5)
-      ..quadraticBezierTo(
-        centerX - width * 0.6,
-        groundY - 10,
-        centerX - width * 0.5,
-        groundY - 20,
-      )
-      ..lineTo(centerX - width * 0.35 + sway, groundY - height)
-      ..lineTo(centerX + width * 0.35 + sway, groundY - height)
-      ..lineTo(centerX + width * 0.5, groundY - 20)
-      ..quadraticBezierTo(
-        centerX + width * 0.6,
-        groundY - 10,
-        centerX + width,
-        groundY + 5,
-      )
-      ..close();
-
-    canvas.drawPath(path, trunkPaint);
-
-    // Detailed bark texture
-    final barkPaint = Paint()
-      ..color = Colors.black.withValues(alpha: 0.25)
-      ..strokeWidth = 1.5
-      ..style = PaintingStyle.stroke;
-
-    for (double i = 0; i < height; i += 10) {
-      final offset = math.sin(i * 0.3) * 3;
-      canvas.drawLine(
-        Offset(centerX - width * 0.3 + offset, groundY - i),
-        Offset(centerX + width * 0.2 + offset, groundY - i - 7),
-        barkPaint,
-      );
-    }
-  }
-
-  void _drawFloweringBranch(
-    Canvas canvas,
-    Offset start,
-    Map<String, dynamic> branchData,
-    double elapsedTime,
-  ) {
-    final length = branchData['length'] as double;
-    final angle = branchData['angle'] as double;
-    final flowerCount = branchData['flowers'] as int;
-
-    final branchPaint = Paint()
-      ..color = const Color(0xFF6D4C41)
-      ..strokeWidth = 6
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-
-    final midPoint = Offset(
-      start.dx + (length * 0.6) * math.sin(angle),
+    final controlPoint = Offset(
+      start.dx + (length * 0.55) * math.sin(angle),
       start.dy - (length * 0.6) * math.cos(angle),
     );
 
@@ -507,76 +418,142 @@ class BloomingPainter extends TreeStagePainter {
 
     final branchPath = Path()
       ..moveTo(start.dx, start.dy)
-      ..quadraticBezierTo(midPoint.dx, midPoint.dy, endPoint.dx, endPoint.dy);
+      ..quadraticBezierTo(
+        controlPoint.dx,
+        controlPoint.dy,
+        endPoint.dx,
+        endPoint.dy,
+      );
 
     canvas.drawPath(branchPath, branchPaint);
 
-    // Draw flowers and leaves
-    _drawFlowerCluster(canvas, endPoint, flowerCount, angle, elapsedTime);
+    // Draw small twigs branching off
+    for (int i = 0; i < twigCount; i++) {
+      final twigT = 0.5 + (i * 0.25);
+      final twigStart = Offset(
+        lerpDouble(start.dx, endPoint.dx, twigT)!,
+        lerpDouble(start.dy, endPoint.dy, twigT)!,
+      );
+      _drawSmallTwig(canvas, twigStart, angle, width * 0.5, elapsedTime);
+    }
+
+    // Draw abundant leaf cluster
+    _drawWildLeafCluster(canvas, endPoint, leafCount, angle, elapsedTime);
   }
 
-  void _drawFlowerCluster(
+  void _drawSmallTwig(
+    Canvas canvas,
+    Offset start,
+    double baseAngle,
+    double width,
+    double elapsedTime,
+  ) {
+    final random = math.Random(start.dx.toInt() + start.dy.toInt());
+    final twigAngle = baseAngle + (random.nextDouble() - 0.5) * 1.2;
+    final twigLength = 12 + random.nextDouble() * 8;
+
+    final twigPaint = Paint()
+      ..color = const Color(0xFF8D6E63)
+      ..strokeWidth = width
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
+    final twigEnd = Offset(
+      start.dx + twigLength * math.sin(twigAngle),
+      start.dy - twigLength * math.cos(twigAngle),
+    );
+
+    canvas.drawLine(start, twigEnd, twigPaint);
+
+    // Few leaves on twig
+    _drawWildLeafCluster(canvas, twigEnd, 4, twigAngle, elapsedTime);
+  }
+
+  void _drawWildLeafCluster(
     Canvas canvas,
     Offset center,
     int count,
     double baseAngle,
     double elapsedTime,
   ) {
-    final clusterRandom = math.Random(center.dx.toInt());
+    final random = math.Random(center.dx.toInt());
 
     for (int i = 0; i < count; i++) {
-      final angle = baseAngle + (clusterRandom.nextDouble() - 0.5) * 2.5;
-      final distance = clusterRandom.nextDouble() * 20;
-      final bloom = (math.sin(elapsedTime * math.pi * 2 + i) + 1) / 2;
+      final angle = baseAngle + (random.nextDouble() - 0.5) * 3.5;
+      final distance = 6 + random.nextDouble() * 22;
+      final rustleX = math.sin(elapsedTime * math.pi * 2 + i * 0.8) * 2;
+      final rustleY = math.cos(elapsedTime * math.pi * 1.8 + i * 0.6) * 1.5;
 
-      final flowerPos = Offset(
-        center.dx + math.cos(angle) * distance,
-        center.dy + math.sin(angle) * distance,
+      final leafPos = Offset(
+        center.dx + math.cos(angle) * distance + rustleX,
+        center.dy + math.sin(angle) * distance + rustleY,
       );
 
+      final leafSize = 14 + random.nextDouble() * 6;
+      final leafRotation = angle + (random.nextDouble() - 0.5) * 1.2;
+
+      // Mix different leaf shapes for wild, natural look
       if (i % 3 == 0) {
-        _drawFlower(canvas, flowerPos, bloom);
+        _drawRoundLeaf(canvas, leafPos, leafSize * 0.9, leafRotation);
       } else {
-        _drawLeafSimple(canvas, flowerPos, 10, angle);
+        _drawNarrowLeaf(canvas, leafPos, leafSize, leafRotation);
       }
     }
   }
 
-  void _drawFlower(Canvas canvas, Offset center, double bloom) {
+  void _drawNarrowLeaf(
+    Canvas canvas,
+    Offset center,
+    double length,
+    double rotation,
+  ) {
     canvas.save();
     canvas.translate(center.dx, center.dy);
+    canvas.rotate(rotation);
 
-    final petalPaint = Paint()..style = PaintingStyle.fill;
+    final leafPaint = Paint()
+      ..style = PaintingStyle.fill
+      ..shader =
+          LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              const Color(0xFFA5D6A7), // Fresh light green
+              const Color(0xFF81C784), // Medium green
+              const Color(0xFF66BB6A), // Vibrant green
+            ],
+            stops: [0.0, 0.5, 1.0],
+          ).createShader(
+            Rect.fromLTWH(-length * 0.12, -length * 0.5, length * 0.24, length),
+          );
 
-    // Draw petals
-    for (int i = 0; i < 5; i++) {
-      canvas.save();
-      canvas.rotate((i * math.pi * 2 / 5));
+    // Narrow, elongated leaf
+    final path = Path()
+      ..moveTo(0, -length * 0.5)
+      ..quadraticBezierTo(length * 0.09, -length * 0.2, length * 0.12, 0)
+      ..quadraticBezierTo(length * 0.09, length * 0.2, 0, length * 0.5)
+      ..quadraticBezierTo(-length * 0.09, length * 0.2, -length * 0.12, 0)
+      ..quadraticBezierTo(-length * 0.09, -length * 0.2, 0, -length * 0.5);
 
-      petalPaint.shader = RadialGradient(
-        colors: [
-          const Color(0xFFFFFFFF),
-          const Color(0xFFFFB6C1),
-        ],
-      ).createShader(Rect.fromCircle(center: Offset.zero, radius: 8 * bloom));
+    canvas.drawPath(path, leafPaint);
 
-      final petalPath = Path()
-        ..moveTo(0, 0)
-        ..quadraticBezierTo(4 * bloom, -6 * bloom, 0, -10 * bloom)
-        ..quadraticBezierTo(-4 * bloom, -6 * bloom, 0, 0);
-      canvas.drawPath(petalPath, petalPaint);
-      canvas.restore();
-    }
+    // Central vein
+    final veinPaint = Paint()
+      ..color = const Color(0xFF558B2F).withValues(alpha: 0.4)
+      ..strokeWidth = 0.8
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
 
-    // Center
-    petalPaint.shader = null;
-    petalPaint.color = const Color(0xFFFFD700);
-    canvas.drawCircle(Offset.zero, 3 * bloom, petalPaint);
+    canvas.drawLine(
+      Offset(0, -length * 0.45),
+      Offset(0, length * 0.45),
+      veinPaint,
+    );
 
     canvas.restore();
   }
 
-  void _drawLeafSimple(
+  void _drawRoundLeaf(
     Canvas canvas,
     Offset center,
     double size,
@@ -587,16 +564,367 @@ class BloomingPainter extends TreeStagePainter {
     canvas.rotate(rotation);
 
     final leafPaint = Paint()
-      ..color = const Color(0xFF7CB342)
-      ..style = PaintingStyle.fill;
+      ..style = PaintingStyle.fill
+      ..shader = RadialGradient(
+        colors: [
+          const Color(0xFFA5D6A7), // Light center
+          const Color(0xFF81C784), // Medium
+          const Color(0xFF66BB6A), // Darker edge
+        ],
+        stops: [0.0, 0.6, 1.0],
+      ).createShader(Rect.fromCircle(center: Offset.zero, radius: size * 0.6));
+
+    // Rounder, broader leaf shape
+    final path = Path()
+      ..moveTo(0, -size * 0.4)
+      ..quadraticBezierTo(size * 0.5, -size * 0.3, size * 0.6, 0)
+      ..quadraticBezierTo(size * 0.5, size * 0.3, 0, size * 0.5)
+      ..quadraticBezierTo(-size * 0.5, size * 0.3, -size * 0.6, 0)
+      ..quadraticBezierTo(-size * 0.5, -size * 0.3, 0, -size * 0.4);
+
+    canvas.drawPath(path, leafPaint);
+
+    // Vein pattern
+    final veinPaint = Paint()
+      ..color = const Color(0xFF558B2F).withValues(alpha: 0.35)
+      ..strokeWidth = 0.7
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
+    // Central vein
+    canvas.drawLine(
+      Offset(0, -size * 0.35),
+      Offset(0, size * 0.4),
+      veinPaint,
+    );
+
+    // Side veins
+    for (int i = 0; i < 2; i++) {
+      final yPos = -size * 0.15 + (i * size * 0.25);
+      canvas.drawLine(
+        Offset(0, yPos),
+        Offset(size * 0.3, yPos + size * 0.1),
+        veinPaint,
+      );
+      canvas.drawLine(
+        Offset(0, yPos),
+        Offset(-size * 0.3, yPos + size * 0.1),
+        veinPaint,
+      );
+    }
+
+    canvas.restore();
+  }
+}
+
+// 4. Blooming State - Enhanced with delicate branches and more flowers
+class BloomingPainter extends TreeStagePainter {
+  BloomingPainter({required super.elapsedTime, required super.tree});
+
+  @override
+  void paint(Canvas canvas, Size size, double centerX, double groundY) {
+    groundPainter.paint(canvas, size, groundY);
+
+    final trunkHeight = tree.height * 1.2;
+    final windSway = math.sin(elapsedTime * math.pi) * 2;
+
+    // Draw elegant thin trunk
+    _drawElegantTrunk(canvas, centerX, groundY, trunkHeight, 16, windSway);
+
+    // More branches with better distribution
+    final branches = [
+      {'y': 0.22, 'length': 75.0, 'angle': -1.1, 'width': 4.5, 'flowers': 15},
+      {'y': 0.25, 'length': 75.0, 'angle': 1.1, 'width': 4.5, 'flowers': 15},
+      {'y': 0.38, 'length': 70.0, 'angle': -0.95, 'width': 4.0, 'flowers': 13},
+      {'y': 0.41, 'length': 70.0, 'angle': 0.95, 'width': 4.0, 'flowers': 13},
+      {'y': 0.52, 'length': 65.0, 'angle': -0.85, 'width': 3.8, 'flowers': 12},
+      {'y': 0.55, 'length': 65.0, 'angle': 0.85, 'width': 3.8, 'flowers': 12},
+      {'y': 0.66, 'length': 58.0, 'angle': -0.75, 'width': 3.5, 'flowers': 10},
+      {'y': 0.69, 'length': 58.0, 'angle': 0.75, 'width': 3.5, 'flowers': 10},
+      {'y': 0.78, 'length': 52.0, 'angle': -0.65, 'width': 3.2, 'flowers': 9},
+      {'y': 0.81, 'length': 52.0, 'angle': 0.65, 'width': 3.2, 'flowers': 9},
+      {'y': 0.88, 'length': 45.0, 'angle': -0.5, 'width': 2.8, 'flowers': 7},
+      {'y': 0.91, 'length': 45.0, 'angle': 0.5, 'width': 2.8, 'flowers': 7},
+      {'y': 0.96, 'length': 38.0, 'angle': -0.2, 'width': 2.5, 'flowers': 6},
+      {'y': 0.98, 'length': 38.0, 'angle': 0.2, 'width': 2.5, 'flowers': 6},
+    ];
+
+    for (var branchData in branches) {
+      final y = groundY - trunkHeight * (branchData['y'] as double);
+      final branchSway = windSway * (1.0 - (branchData['y'] as double));
+      final startOffset = Offset(centerX + branchSway, y);
+      _drawDelicateBranch(canvas, startOffset, branchData, elapsedTime);
+    }
+  }
+
+  void _drawElegantTrunk(
+    Canvas canvas,
+    double centerX,
+    double groundY,
+    double height,
+    double width,
+    double sway,
+  ) {
+    final trunkPaint = Paint()
+      ..shader =
+          LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            colors: [
+              const Color(0xFF5D4037),
+              const Color(0xFF8D6E63),
+              const Color(0xFF6D4C41),
+              const Color(0xFF5D4037),
+            ],
+            stops: [0.0, 0.35, 0.65, 1.0],
+          ).createShader(
+            Rect.fromLTWH(
+              centerX - width,
+              groundY - height,
+              width * 2,
+              height,
+            ),
+          );
+
+    final path = Path()
+      ..moveTo(centerX - width * 0.75, groundY + 5)
+      ..quadraticBezierTo(
+        centerX - width * 0.55,
+        groundY - height * 0.15,
+        centerX - width * 0.45,
+        groundY - height * 0.4,
+      )
+      ..quadraticBezierTo(
+        centerX - width * 0.3 + sway * 0.8,
+        groundY - height * 0.7,
+        centerX - width * 0.25 + sway,
+        groundY - height,
+      )
+      ..lineTo(centerX + width * 0.25 + sway, groundY - height)
+      ..quadraticBezierTo(
+        centerX + width * 0.3 + sway * 0.8,
+        groundY - height * 0.7,
+        centerX + width * 0.45,
+        groundY - height * 0.4,
+      )
+      ..quadraticBezierTo(
+        centerX + width * 0.55,
+        groundY - height * 0.15,
+        centerX + width * 0.75,
+        groundY + 5,
+      )
+      ..close();
+
+    canvas.drawPath(path, trunkPaint);
+
+    // Subtle bark texture
+    final barkPaint = Paint()
+      ..color = Colors.black.withValues(alpha: 0.2)
+      ..strokeWidth = 1.2
+      ..style = PaintingStyle.stroke;
+
+    for (double i = 0; i < height; i += 18) {
+      final curve = math.sin(i * 0.25) * 2;
+      canvas.drawLine(
+        Offset(centerX - width * 0.2 + curve, groundY - i),
+        Offset(centerX + width * 0.15 + curve, groundY - i - 8),
+        barkPaint,
+      );
+    }
+  }
+
+  void _drawDelicateBranch(
+    Canvas canvas,
+    Offset start,
+    Map<String, dynamic> branchData,
+    double elapsedTime,
+  ) {
+    final length = branchData['length'] as double;
+    final angle = branchData['angle'] as double;
+    final width = branchData['width'] as double;
+    final flowerCount = branchData['flowers'] as int;
+
+    // Thin, graceful branch
+    final branchPaint = Paint()
+      ..strokeWidth = width
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke
+      ..shader =
+          LinearGradient(
+            colors: [
+              const Color(0xFF6D4C41),
+              const Color(0xFF8D6E63),
+            ],
+          ).createShader(
+            Rect.fromPoints(start, Offset(start.dx + 100, start.dy + 100)),
+          );
+
+    final controlPoint = Offset(
+      start.dx + (length * 0.5) * math.sin(angle),
+      start.dy - (length * 0.65) * math.cos(angle),
+    );
+
+    final endPoint = Offset(
+      start.dx + length * math.sin(angle),
+      start.dy - length * math.cos(angle),
+    );
+
+    final branchPath = Path()
+      ..moveTo(start.dx, start.dy)
+      ..quadraticBezierTo(
+        controlPoint.dx,
+        controlPoint.dy,
+        endPoint.dx,
+        endPoint.dy,
+      );
+
+    canvas.drawPath(branchPath, branchPaint);
+
+    // Draw abundant flowers and leaves
+    _drawBlossomCluster(canvas, endPoint, flowerCount, angle, elapsedTime);
+  }
+
+  void _drawBlossomCluster(
+    Canvas canvas,
+    Offset center,
+    int count,
+    double baseAngle,
+    double elapsedTime,
+  ) {
+    final random = math.Random(center.dx.toInt());
+
+    for (int i = 0; i < count; i++) {
+      final angle = baseAngle + (random.nextDouble() - 0.5) * 2.8;
+      final distance = 8 + random.nextDouble() * 28;
+      final sway = math.sin(elapsedTime * math.pi + i * 0.5) * 1.5;
+
+      final position = Offset(
+        center.dx + math.cos(angle) * distance + sway,
+        center.dy + math.sin(angle) * distance,
+      );
+
+      // Mix of flowers and leaves
+      if (i % 3 == 0) {
+        final bloom = 0.85 + (math.sin(elapsedTime * math.pi * 2 + i) * 0.15);
+        _drawPrettyFlower(canvas, position, bloom);
+      } else {
+        final leafSize = 11 + random.nextDouble() * 4;
+        _drawPrettyLeaf(canvas, position, leafSize, angle);
+      }
+    }
+  }
+
+  void _drawPrettyFlower(Canvas canvas, Offset center, double bloom) {
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+
+    final petalPaint = Paint()..style = PaintingStyle.fill;
+
+    // Draw 5 elegant petals
+    for (int i = 0; i < 5; i++) {
+      canvas.save();
+      canvas.rotate((i * math.pi * 2 / 5));
+
+      petalPaint.shader =
+          LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              const Color(0xFFFFFFFF),
+              const Color(0xFFFFE4E1),
+              const Color(0xFFFFB6C1),
+            ],
+            stops: [0.0, 0.5, 1.0],
+          ).createShader(
+            Rect.fromLTWH(-6 * bloom, -12 * bloom, 12 * bloom, 12 * bloom),
+          );
+
+      final petalPath = Path()
+        ..moveTo(0, 0)
+        ..quadraticBezierTo(
+          3.5 * bloom,
+          -5 * bloom,
+          2 * bloom,
+          -10 * bloom,
+        )
+        ..quadraticBezierTo(
+          0,
+          -8 * bloom,
+          -2 * bloom,
+          -10 * bloom,
+        )
+        ..quadraticBezierTo(-3.5 * bloom, -5 * bloom, 0, 0);
+      canvas.drawPath(petalPath, petalPaint);
+      canvas.restore();
+    }
+
+    // Golden center with detail
+    final centerPaint = Paint()..style = PaintingStyle.fill;
+
+    // Outer center
+    centerPaint.color = const Color(0xFFFFD700);
+    canvas.drawCircle(Offset.zero, 3.5 * bloom, centerPaint);
+
+    // Inner center detail
+    centerPaint.color = const Color(0xFFFFA500);
+    canvas.drawCircle(Offset.zero, 2 * bloom, centerPaint);
+
+    // Tiny dots for pollen effect
+    centerPaint.color = const Color(0xFFFF8C00).withValues(alpha: 0.6);
+    for (int i = 0; i < 6; i++) {
+      final dotAngle = (i * math.pi * 2 / 6);
+      final dotPos = Offset(
+        math.cos(dotAngle) * 2 * bloom,
+        math.sin(dotAngle) * 2 * bloom,
+      );
+      canvas.drawCircle(dotPos, 0.6 * bloom, centerPaint);
+    }
+
+    canvas.restore();
+  }
+
+  void _drawPrettyLeaf(
+    Canvas canvas,
+    Offset center,
+    double size,
+    double rotation,
+  ) {
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate(rotation);
+
+    final leafPaint = Paint()
+      ..style = PaintingStyle.fill
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          const Color(0xFF9CCC65),
+          const Color(0xFF7CB342),
+          const Color(0xFF689F38),
+        ],
+        stops: [0.0, 0.5, 1.0],
+      ).createShader(Rect.fromLTWH(-size * 0.5, -size * 0.5, size, size));
 
     final path = Path()
       ..moveTo(0, -size * 0.5)
-      ..quadraticBezierTo(size * 0.4, -size * 0.2, size * 0.5, 0)
-      ..quadraticBezierTo(size * 0.4, size * 0.2, 0, size * 0.5)
-      ..quadraticBezierTo(-size * 0.4, size * 0.2, -size * 0.5, 0)
-      ..quadraticBezierTo(-size * 0.4, -size * 0.2, 0, -size * 0.5);
+      ..quadraticBezierTo(size * 0.4, -size * 0.25, size * 0.48, 0)
+      ..quadraticBezierTo(size * 0.4, size * 0.25, 0, size * 0.5)
+      ..quadraticBezierTo(-size * 0.4, size * 0.25, -size * 0.48, 0)
+      ..quadraticBezierTo(-size * 0.4, -size * 0.25, 0, -size * 0.5);
+
     canvas.drawPath(path, leafPaint);
+
+    // Subtle vein
+    final veinPaint = Paint()
+      ..color = const Color(0xFF558B2F).withValues(alpha: 0.3)
+      ..strokeWidth = 0.7
+      ..style = PaintingStyle.stroke;
+    canvas.drawLine(
+      Offset(0, -size * 0.4),
+      Offset(0, size * 0.4),
+      veinPaint,
+    );
 
     canvas.restore();
   }
@@ -669,20 +997,20 @@ void _drawRealisticTrunk(
   ).createShader(rect);
 
   final path = Path()
-    ..moveTo(centerX - width * 0.7, groundY + 5)
+    ..moveTo(centerX - width * 0.5, groundY + 5)
     ..quadraticBezierTo(
-      centerX - width * 0.5,
+      centerX - width * 0.4,
       groundY,
-      centerX - width * 0.5,
+      centerX - width * 0.4,
       groundY - 10,
     )
-    ..lineTo(centerX - width * 0.3 + sway, groundY - height)
-    ..lineTo(centerX + width * 0.3 + sway, groundY - height)
-    ..lineTo(centerX + width * 0.5, groundY - 10)
+    ..lineTo(centerX - width * 0.25 + sway, groundY - height)
+    ..lineTo(centerX + width * 0.25 + sway, groundY - height)
+    ..lineTo(centerX + width * 0.4, groundY - 10)
     ..quadraticBezierTo(
-      centerX + width * 0.5,
+      centerX + width * 0.4,
       groundY,
-      centerX + width * 0.7,
+      centerX + width * 0.5,
       groundY + 5,
     )
     ..close();
@@ -836,7 +1164,7 @@ void _drawNaturalLeafCluster(
   }
 }
 
-// 6. Completed State - Magnificent tree with golden glow and celebration effects
+// 6. Completed State - Optimized for performance
 class CompletedPainter extends TreeStagePainter {
   CompletedPainter({required super.elapsedTime, required super.tree});
 
@@ -844,319 +1172,238 @@ class CompletedPainter extends TreeStagePainter {
   void paint(Canvas canvas, Size size, double centerX, double groundY) {
     groundPainter.paint(canvas, size, groundY);
 
-    final trunkHeight = tree.height * 1.1;
-    final windSway = math.sin(elapsedTime * math.pi) * 4;
+    final trunkHeight = tree.height * 1.15;
+    final windSway = math.sin(elapsedTime * math.pi) * 3;
 
-    // Draw magical glow around the tree
-    _drawCelebrationGlow(canvas, centerX, groundY, trunkHeight, elapsedTime);
+    // Elegant double glow
+    final glowPulse = (math.sin(elapsedTime * math.pi * 2) + 1) / 2;
 
-    // Draw majestic trunk
-    _drawMajesticTrunk(
-      canvas,
-      centerX,
-      groundY,
-      trunkHeight,
-      28,
-      windSway,
-      elapsedTime,
+    final outerGlow = Paint()
+      ..color = const Color(0xFFFFA500).withValues(alpha: 0.08 * glowPulse)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 50);
+    canvas.drawCircle(
+      Offset(centerX, groundY - trunkHeight * 0.5),
+      140,
+      outerGlow,
     );
 
-    // Draw abundant branches with golden accents
+    final innerGlow = Paint()
+      ..color = const Color(0xFFFFD700).withValues(alpha: 0.12 * glowPulse)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 25);
+    canvas.drawCircle(
+      Offset(centerX, groundY - trunkHeight * 0.5),
+      100,
+      innerGlow,
+    );
+
+    // Draw elegant thin trunk
+    _drawElegantTrunk(canvas, centerX, groundY, trunkHeight, 18, windSway);
+
+    // More branches with better distribution
     final branches = [
-      {'y': 0.15, 'length': 90.0, 'angle': -1.1, 'width': 14.0},
-      {'y': 0.17, 'length': 90.0, 'angle': 1.1, 'width': 14.0},
-      {'y': 0.32, 'length': 85.0, 'angle': -0.9, 'width': 12.0},
-      {'y': 0.34, 'length': 85.0, 'angle': 0.9, 'width': 12.0},
-      {'y': 0.48, 'length': 80.0, 'angle': -0.8, 'width': 11.0},
-      {'y': 0.5, 'length': 80.0, 'angle': 0.8, 'width': 11.0},
-      {'y': 0.64, 'length': 70.0, 'angle': -0.7, 'width': 10.0},
-      {'y': 0.66, 'length': 70.0, 'angle': 0.7, 'width': 10.0},
-      {'y': 0.78, 'length': 60.0, 'angle': -0.6, 'width': 8.0},
-      {'y': 0.8, 'length': 60.0, 'angle': 0.6, 'width': 8.0},
-      {'y': 0.9, 'length': 45.0, 'angle': -0.3, 'width': 7.0},
-      {'y': 0.92, 'length': 45.0, 'angle': 0.3, 'width': 7.0},
-      {'y': 0.98, 'length': 30.0, 'angle': 0.1, 'width': 6.0},
+      {'y': 0.18, 'length': 90.0, 'angle': -1.1, 'width': 6.0, 'leaves': 14},
+      {'y': 0.2, 'length': 90.0, 'angle': 1.1, 'width': 6.0, 'leaves': 14},
+      {'y': 0.32, 'length': 85.0, 'angle': -0.95, 'width': 5.5, 'leaves': 12},
+      {'y': 0.34, 'length': 85.0, 'angle': 0.95, 'width': 5.5, 'leaves': 12},
+      {'y': 0.45, 'length': 80.0, 'angle': -0.85, 'width': 5.0, 'leaves': 11},
+      {'y': 0.47, 'length': 80.0, 'angle': 0.85, 'width': 5.0, 'leaves': 11},
+      {'y': 0.58, 'length': 72.0, 'angle': -0.75, 'width': 4.5, 'leaves': 10},
+      {'y': 0.6, 'length': 72.0, 'angle': 0.75, 'width': 4.5, 'leaves': 10},
+      {'y': 0.7, 'length': 65.0, 'angle': -0.65, 'width': 4.0, 'leaves': 9},
+      {'y': 0.72, 'length': 65.0, 'angle': 0.65, 'width': 4.0, 'leaves': 9},
+      {'y': 0.82, 'length': 55.0, 'angle': -0.5, 'width': 3.5, 'leaves': 8},
+      {'y': 0.84, 'length': 55.0, 'angle': 0.5, 'width': 3.5, 'leaves': 8},
+      {'y': 0.92, 'length': 45.0, 'angle': -0.3, 'width': 3.0, 'leaves': 6},
+      {'y': 0.94, 'length': 45.0, 'angle': 0.3, 'width': 3.0, 'leaves': 6},
+      {'y': 0.98, 'length': 35.0, 'angle': 0.0, 'width': 2.5, 'leaves': 5},
     ];
 
     for (var branchData in branches) {
       final y = groundY - trunkHeight * (branchData['y'] as double);
       final branchSway = windSway * (1.0 - (branchData['y'] as double));
       final startOffset = Offset(centerX + branchSway, y);
-      _drawGoldenBranch(canvas, startOffset, branchData, 3, elapsedTime);
+      _drawGracefulBranch(canvas, startOffset, branchData, elapsedTime);
     }
   }
 
-  void _drawCelebrationGlow(
-    Canvas canvas,
-    double centerX,
-    double groundY,
-    double height,
-    double elapsedTime,
-  ) {
-    final glowPulse = (math.sin(elapsedTime * math.pi * 2) + 1) / 2;
-
-    // Multiple layers of glow for depth
-    final glowPaint1 = Paint()
-      ..color = const Color(0xFFFFD700).withValues(alpha: 0.15 * glowPulse)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 40);
-
-    canvas.drawCircle(
-      Offset(centerX, groundY - height * 0.5),
-      150 + glowPulse * 20,
-      glowPaint1,
-    );
-
-    final glowPaint2 = Paint()
-      ..color = const Color(0xFFFFA500).withValues(alpha: 0.1 * glowPulse)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 60);
-
-    canvas.drawCircle(
-      Offset(centerX, groundY - height * 0.5),
-      180 + glowPulse * 30,
-      glowPaint2,
-    );
-
-    // Subtle rainbow halo
-    final haloPaint = Paint()
-      ..shader =
-          RadialGradient(
-            colors: [
-              Colors.transparent,
-              const Color(0xFFFFB6C1).withValues(alpha: 0.05),
-              const Color(0xFF9B85C0).withValues(alpha: 0.05),
-              Colors.transparent,
-            ],
-            stops: [0.0, 0.4, 0.7, 1.0],
-          ).createShader(
-            Rect.fromCircle(
-              center: Offset(centerX, groundY - height * 0.5),
-              radius: 200,
-            ),
-          );
-
-    canvas.drawCircle(
-      Offset(centerX, groundY - height * 0.5),
-      200,
-      haloPaint,
-    );
-  }
-
-  void _drawMajesticTrunk(
+  void _drawElegantTrunk(
     Canvas canvas,
     double centerX,
     double groundY,
     double height,
     double width,
     double sway,
-    double elapsedTime,
   ) {
-    final trunkPaint = Paint();
-    final rect = Rect.fromLTWH(
-      centerX - width,
-      groundY - height,
-      width * 2,
-      height,
-    );
+    final trunkPaint = Paint()
+      ..shader =
+          LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            colors: [
+              const Color(0xFF4A3428),
+              const Color(0xFF8D6E63),
+              const Color(0xFF6D4C41),
+              const Color(0xFF5D4037),
+            ],
+            stops: [0.0, 0.35, 0.65, 1.0],
+          ).createShader(
+            Rect.fromLTWH(
+              centerX - width,
+              groundY - height,
+              width * 2,
+              height,
+            ),
+          );
 
-    trunkPaint.shader = LinearGradient(
-      begin: Alignment.centerLeft,
-      end: Alignment.centerRight,
-      colors: [
-        const Color(0xFF4A3428),
-        const Color(0xFF8D6E63),
-        const Color(0xFF6D4C41),
-        const Color(0xFF4A3428),
-      ],
-      stops: [0.0, 0.3, 0.7, 1.0],
-    ).createShader(rect);
-
+    // Elegant tapered trunk
     final path = Path()
-      ..moveTo(centerX - width * 0.8, groundY + 5)
+      ..moveTo(centerX - width * 0.9, groundY + 5)
       ..quadraticBezierTo(
-        centerX - width * 0.6,
-        groundY - 5,
-        centerX - width * 0.55,
-        groundY - 15,
+        centerX - width * 0.7,
+        groundY - height * 0.15,
+        centerX - width * 0.5,
+        groundY - height * 0.4,
       )
-      ..lineTo(centerX - width * 0.35 + sway, groundY - height)
-      ..lineTo(centerX + width * 0.35 + sway, groundY - height)
-      ..lineTo(centerX + width * 0.55, groundY - 15)
       ..quadraticBezierTo(
-        centerX + width * 0.6,
-        groundY - 5,
-        centerX + width * 0.8,
+        centerX - width * 0.35 + sway * 0.8,
+        groundY - height * 0.7,
+        centerX - width * 0.25 + sway,
+        groundY - height,
+      )
+      ..lineTo(centerX + width * 0.25 + sway, groundY - height)
+      ..quadraticBezierTo(
+        centerX + width * 0.35 + sway * 0.8,
+        groundY - height * 0.7,
+        centerX + width * 0.5,
+        groundY - height * 0.4,
+      )
+      ..quadraticBezierTo(
+        centerX + width * 0.7,
+        groundY - height * 0.15,
+        centerX + width * 0.9,
         groundY + 5,
       )
       ..close();
 
     canvas.drawPath(path, trunkPaint);
 
-    // Enhanced bark texture with golden highlights
+    // Refined bark texture
     final barkPaint = Paint()
-      ..color = Colors.black.withValues(alpha: 0.2)
-      ..strokeWidth = 2.0
+      ..color = Colors.black.withValues(alpha: 0.18)
+      ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke;
 
-    final goldenBarkPaint = Paint()
-      ..color = const Color(0xFFFFD700).withValues(alpha: 0.3)
+    for (double i = 0; i < height; i += 18) {
+      final curve = math.sin(i * 0.2) * 3;
+      canvas.drawLine(
+        Offset(centerX - width * 0.25 + curve, groundY - i),
+        Offset(centerX + width * 0.2 + curve, groundY - i - 8),
+        barkPaint,
+      );
+    }
+
+    // Golden highlights on trunk
+    final highlightPaint = Paint()
+      ..color = const Color(0xFFFFD700).withValues(alpha: 0.15)
       ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke;
 
-    for (double i = 0; i < height; i += 12) {
-      final textureSway = math.sin(elapsedTime * math.pi * 2 + i * 0.1) * 2;
-      final offsetX = math.sin(i * 0.2) * 4;
-
-      // Dark bark lines
+    for (double i = 0; i < height; i += 45) {
       canvas.drawLine(
-        Offset(centerX - width * 0.3 + offsetX + textureSway, groundY - i),
-        Offset(centerX + width * 0.2 + offsetX + textureSway, groundY - i - 8),
-        barkPaint,
+        Offset(centerX - width * 0.2, groundY - i - 10),
+        Offset(centerX + width * 0.15, groundY - i - 16),
+        highlightPaint,
       );
-
-      // Golden accent lines (less frequent)
-      if (i % 30 == 0) {
-        canvas.drawLine(
-          Offset(centerX - width * 0.25 + offsetX, groundY - i - 5),
-          Offset(centerX + width * 0.15 + offsetX, groundY - i - 12),
-          goldenBarkPaint,
-        );
-      }
     }
-
-    // Add trunk glow effect
-    final trunkGlowPaint = Paint()
-      ..color = const Color(0xFFFFD700).withValues(alpha: 0.1)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
-    canvas.drawPath(path, trunkGlowPaint);
   }
 
-  void _drawGoldenBranch(
+  void _drawGracefulBranch(
     Canvas canvas,
     Offset start,
-    Map<String, double> branchData,
-    int depth,
+    Map<String, dynamic> branchData,
     double elapsedTime,
   ) {
-    if (depth <= 0) return;
+    final length = branchData['length'] as double;
+    final angle = branchData['angle'] as double;
+    final width = branchData['width'] as double;
+    final leafCount = branchData['leaves'] as int;
 
-    final length = branchData['length']!;
-    final angle = branchData['angle']!;
-    final width = branchData['width']!;
-
-    final paint = Paint()
+    // Curved branch with gradient
+    final branchPaint = Paint()
       ..strokeWidth = width
-      ..strokeCap = StrokeCap.round;
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke
+      ..shader =
+          LinearGradient(
+            colors: [
+              const Color(0xFF6D4C41),
+              const Color(0xFFA1887F),
+            ],
+          ).createShader(
+            Rect.fromPoints(start, Offset(start.dx + 100, start.dy + 100)),
+          );
 
-    final rect = Rect.fromPoints(
-      start,
-      Offset(start.dx + length, start.dy + length),
+    final controlPoint = Offset(
+      start.dx + (length * 0.5) * math.sin(angle),
+      start.dy - (length * 0.6) * math.cos(angle),
     );
-
-    paint.shader = LinearGradient(
-      colors: [
-        const Color(0xFF6D4C41),
-        const Color(0xFFA1887F),
-        const Color(0xFFBCAA9F),
-      ],
-    ).createShader(rect);
 
     final endPoint = Offset(
       start.dx + length * math.sin(angle),
       start.dy - length * math.cos(angle),
     );
 
-    // Draw branch with tapering
-    final branchPath = Path()..moveTo(start.dx, start.dy);
-    for (double t = 0; t <= 1.0; t += 0.08) {
-      final x = lerpDouble(start.dx, endPoint.dx, t)!;
-      final y = lerpDouble(start.dy, endPoint.dy, t)!;
-      final currentWidth = lerpDouble(width, 1.5, t)!;
-      branchPath.addOval(
-        Rect.fromCircle(center: Offset(x, y), radius: currentWidth * 0.5),
-      );
-    }
-    canvas.drawPath(branchPath, paint);
-
-    // Add golden shimmer to branch tips
-    if (depth == 3) {
-      final shimmerPaint = Paint()
-        ..color = const Color(0xFFFFD700).withValues(
-          alpha: 0.2 * ((math.sin(elapsedTime * math.pi * 2) + 1) / 2),
-        )
-        ..strokeWidth = width * 0.8
-        ..strokeCap = StrokeCap.round;
-
-      final shimmerPath = Path()..moveTo(start.dx, start.dy);
-      for (double t = 0.7; t <= 1.0; t += 0.1) {
-        final x = lerpDouble(start.dx, endPoint.dx, t)!;
-        final y = lerpDouble(start.dy, endPoint.dy, t)!;
-        shimmerPath.addOval(
-          Rect.fromCircle(center: Offset(x, y), radius: width * 0.4),
-        );
-      }
-      canvas.drawPath(shimmerPath, shimmerPaint);
-    }
-
-    // Draw luxurious leaf cluster
-    _drawLuxuriousLeafCluster(canvas, endPoint, 8, 14, angle, elapsedTime);
-
-    // Draw sub-branches
-    if (depth > 1) {
-      final subBranchData = {
-        'length': length * 0.65,
-        'angle': angle + (angle > 0 ? -0.4 : 0.4),
-        'width': width * 0.65,
-      };
-      final subBranchStart = Offset(
-        lerpDouble(start.dx, endPoint.dx, 0.6)!,
-        lerpDouble(start.dy, endPoint.dy, 0.6)!,
+    final branchPath = Path()
+      ..moveTo(start.dx, start.dy)
+      ..quadraticBezierTo(
+        controlPoint.dx,
+        controlPoint.dy,
+        endPoint.dx,
+        endPoint.dy,
       );
 
-      _drawGoldenBranch(
-        canvas,
-        subBranchStart,
-        subBranchData,
-        depth - 1,
-        elapsedTime,
-      );
-    }
+    canvas.drawPath(branchPath, branchPaint);
+
+    // Draw lush leaf cluster
+    _drawLushLeafCluster(canvas, endPoint, leafCount, angle, elapsedTime);
   }
 
-  void _drawLuxuriousLeafCluster(
+  void _drawLushLeafCluster(
     Canvas canvas,
     Offset center,
     int count,
-    double size,
-    double baseRotation,
+    double baseAngle,
     double elapsedTime,
   ) {
     final random = math.Random(center.dx.toInt());
 
     for (int i = 0; i < count; i++) {
-      final angle = baseRotation + (random.nextDouble() - 0.5) * 1.8;
-      final distance = size * 0.4 + random.nextDouble() * size;
-      final rustleX = math.sin(elapsedTime * math.pi * 2 + i * 0.5) * 3;
-      final rustleY = math.cos(elapsedTime * math.pi * 2 + i * 0.5) * 2;
+      final angle = baseAngle + (random.nextDouble() - 0.5) * 2.5;
+      final distance = 8 + random.nextDouble() * 25;
+      final rustleX = math.sin(elapsedTime * math.pi * 2 + i * 0.7) * 2.5;
+      final rustleY = math.cos(elapsedTime * math.pi * 1.5 + i * 0.5) * 1.5;
 
-      final offset = Offset(
+      final leafPos = Offset(
         center.dx + math.cos(angle) * distance + rustleX,
         center.dy + math.sin(angle) * distance + rustleY,
       );
 
-      // Mix of regular and golden-tinted leaves
-      final isGoldenLeaf = i % 4 == 0;
-      _drawEnhancedLeaf(
+      final leafSize = 13 + random.nextDouble() * 5;
+      final isGolden = i % 4 == 0;
+      final leafRotation = angle + (random.nextDouble() - 0.5) * 0.8;
+
+      _drawBeautifulLeaf(
         canvas,
-        offset,
-        size * (0.9 + random.nextDouble() * 0.3),
-        angle,
-        isGoldenLeaf,
+        leafPos,
+        leafSize,
+        leafRotation,
+        isGolden,
         elapsedTime,
       );
     }
   }
 
-  void _drawEnhancedLeaf(
+  void _drawBeautifulLeaf(
     Canvas canvas,
     Offset center,
     double size,
@@ -1168,56 +1415,77 @@ class CompletedPainter extends TreeStagePainter {
     canvas.translate(center.dx, center.dy);
     canvas.rotate(rotation);
 
-    final paint = Paint()..style = PaintingStyle.fill;
+    final leafPaint = Paint()..style = PaintingStyle.fill;
 
     if (isGolden) {
-      // Golden accent leaves
-      final shimmer = (math.sin(elapsedTime * math.pi * 2) + 1) / 2;
-      paint.shader = RadialGradient(
+      // Golden shimmering leaves
+      final shimmer = (math.sin(elapsedTime * math.pi * 3) + 1) / 2;
+      leafPaint.shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
         colors: [
           Color.lerp(
             const Color(0xFFFFD700),
             const Color(0xFFFFA500),
-            shimmer,
+            shimmer * 0.5,
           )!,
-          const Color(0xFF7CB342),
-        ],
-      ).createShader(Rect.fromCircle(center: Offset.zero, radius: size));
-    } else {
-      // Regular vibrant leaves
-      paint.shader = RadialGradient(
-        colors: [
+          const Color(0xFFDAA520),
           const Color(0xFF8BC34A),
+        ],
+        stops: [0.0, 0.5, 1.0],
+      ).createShader(Rect.fromLTWH(-size * 0.5, -size * 0.5, size, size));
+    } else {
+      // Vibrant green leaves with gradient
+      leafPaint.shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          const Color(0xFF9CCC65),
           const Color(0xFF7CB342),
           const Color(0xFF558B2F),
         ],
         stops: [0.0, 0.5, 1.0],
-      ).createShader(Rect.fromCircle(center: Offset.zero, radius: size));
+      ).createShader(Rect.fromLTWH(-size * 0.5, -size * 0.5, size, size));
     }
 
+    // Elegant leaf shape
     final path = Path()
-      ..moveTo(0, -size / 2)
-      ..quadraticBezierTo(size * 0.5, -size * 0.2, size * 0.6, 0)
-      ..quadraticBezierTo(size * 0.5, size * 0.2, 0, size / 2)
-      ..quadraticBezierTo(-size * 0.5, size * 0.2, -size * 0.6, 0)
-      ..quadraticBezierTo(-size * 0.5, -size * 0.2, 0, -size / 2);
-    canvas.drawPath(path, paint);
+      ..moveTo(0, -size * 0.5)
+      ..quadraticBezierTo(size * 0.45, -size * 0.25, size * 0.5, 0)
+      ..quadraticBezierTo(size * 0.45, size * 0.25, 0, size * 0.5)
+      ..quadraticBezierTo(-size * 0.45, size * 0.25, -size * 0.5, 0)
+      ..quadraticBezierTo(-size * 0.45, -size * 0.25, 0, -size * 0.5);
 
-    // Enhanced vein
+    canvas.drawPath(path, leafPaint);
+
+    // Central vein
     final veinPaint = Paint()
       ..color = isGolden
-          ? const Color(0xFFFFD700).withValues(alpha: 0.3)
-          : Colors.black.withValues(alpha: 0.15)
+          ? const Color(0xFFDAA520).withValues(alpha: 0.4)
+          : const Color(0xFF558B2F).withValues(alpha: 0.3)
       ..strokeWidth = 0.8
+      ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
-    canvas.drawLine(Offset(0, -size / 2), Offset(0, size / 2), veinPaint);
 
-    // Add subtle glow to golden leaves
-    if (isGolden) {
-      final glowPaint = Paint()
-        ..color = const Color(0xFFFFD700).withValues(alpha: 0.2)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-      canvas.drawPath(path, glowPaint);
+    canvas.drawLine(
+      Offset(0, -size * 0.4),
+      Offset(0, size * 0.4),
+      veinPaint,
+    );
+
+    // Side veins for detail
+    for (int i = 0; i < 3; i++) {
+      final yPos = -size * 0.3 + (i * size * 0.3);
+      canvas.drawLine(
+        Offset(0, yPos),
+        Offset(size * 0.25, yPos + size * 0.08),
+        veinPaint,
+      );
+      canvas.drawLine(
+        Offset(0, yPos),
+        Offset(-size * 0.25, yPos + size * 0.08),
+        veinPaint,
+      );
     }
 
     canvas.restore();

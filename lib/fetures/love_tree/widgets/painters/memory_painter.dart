@@ -633,15 +633,18 @@ class MemoryPainter {
 
       _drawMemoryIcon(canvas, Offset(x, y), memory.emotion);
     } else if (memory.emotion == MemoryEmotion.peaceful) {
-      final random = math.Random(index + 200);
+      // Use a more unique seed combining index and memory ID hash
+      final uniqueSeed = index * 1000 + (memory.id.hashCode % 1000);
+      final random = math.Random(uniqueSeed);
 
-      // Adjusted spacing to keep rabbits closer together
-      final spacing = size.width * 0.08; // Reduced from 0.15 to 0.05
-      final baseX = centerX - (spacing * (total / 2)) + (spacing * index);
+      // Calculate base positions with guaranteed spacing
+      final spacing = size.width * 0.08;
+      final totalWidth = spacing * (total - 1);
+      final startX = centerX - (totalWidth / 2);
+      final baseX = startX + (spacing * index);
 
-      // Reduced random offset to keep rabbits within bounds
-      final randomOffsetX =
-          (random.nextDouble() - 0.5) * 20; // Reduced from 50 to 20
+      // Smaller random offset to keep tight formation
+      final randomOffsetX = (random.nextDouble() - 0.5) * 15;
 
       // Ensure x position stays within canvas bounds
       final iconSize = 15.0;
@@ -650,10 +653,10 @@ class MemoryPainter {
         math.min(size.width - iconSize, baseX + randomOffsetX),
       );
 
-      // Jumping animation
-      final jumpSpeed = 1 + (random.nextDouble() * 5);
-      final jumpProgress = (elapsedTime * jumpSpeed + (index * 0.3)) % 1.0;
-      final jumpHeight = math.sin(jumpProgress * math.pi) * 10.0;
+      // Jumping animation with variation
+      final jumpSpeed = 1.5 + (random.nextDouble() * 2.5);
+      final jumpProgress = (elapsedTime * jumpSpeed + (index * 0.2)) % 1.0;
+      final jumpHeight = math.sin(jumpProgress * math.pi) * 12.0;
 
       final y = groundY - jumpHeight - 10;
 

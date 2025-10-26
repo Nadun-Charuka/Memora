@@ -615,9 +615,9 @@ class MemoryService {
       case MemoryEmotion.nostalgic:
         return 3.0;
       case MemoryEmotion.sad:
-        return 1.0;
+        return -2.0;
       case MemoryEmotion.awful:
-        return 0.5;
+        return -4.0;
     }
   }
 
@@ -636,9 +636,9 @@ class MemoryService {
       case MemoryEmotion.nostalgic:
         return 0.02;
       case MemoryEmotion.sad:
-        return 0.01;
+        return -0.02;
       case MemoryEmotion.awful:
-        return 0.005;
+        return -0.04;
     }
   }
 
@@ -659,9 +659,9 @@ class MemoryService {
       case MemoryEmotion.nostalgic:
         return 3;
       case MemoryEmotion.sad:
-        return 2;
+        return 0;
       case MemoryEmotion.awful:
-        return 1;
+        return 0;
     }
   }
 

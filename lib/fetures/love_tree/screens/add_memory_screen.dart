@@ -884,15 +884,14 @@ class _AddMemoryScreenState extends ConsumerState<AddMemoryScreen>
         };
       case MemoryEmotion.sad:
         return {
-          'growth': '1.0',
-          'love': '2',
-          'description':
-              'Even rain helps trees grow. Your tree supports you through all emotions.',
+          'growth': '-2.0',
+          'love': '0',
+          'description': 'Every rain drop has a sad story to tell',
         };
       case MemoryEmotion.awful:
         return {
-          'growth': '1.0',
-          'love': '1',
+          'growth': '-4.0',
+          'love': '0',
           'description':
               'Dark clouds marked your day awful, but remember... even the happiest relationships have difficult moments.',
         };

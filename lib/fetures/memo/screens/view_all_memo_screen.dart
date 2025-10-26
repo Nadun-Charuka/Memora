@@ -87,6 +87,7 @@ class _MemoryListScreenState extends ConsumerState<MemoryListScreen> {
           }
 
           List<Memory> allMemories = snapshot.data ?? [];
+          allMemories.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
           // Calculate reactive values
           final memoryCount = allMemories.length;

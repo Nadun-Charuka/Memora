@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:memora/core/utils/transition.dart';
+import 'package:memora/fetures/auth/provider/auth_provider.dart';
 import 'package:memora/fetures/love_tree/model/tree_model.dart';
 import 'package:memora/fetures/love_tree/widgets/tree_widget.dart';
 import 'package:memora/fetures/memo/model/memory_model.dart';
@@ -852,6 +853,8 @@ class _TreeDetailScreenState extends ConsumerState<TreeDetailScreen> {
   }
 
   Widget _buildMemoryPreviewCard(Memory memory) {
+    final currentUser = ref.watch(currentUserAsyncProvider);
+    final isMyMemory = currentUser?.uid == memory.addedBy;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
@@ -884,16 +887,46 @@ class _TreeDetailScreenState extends ConsumerState<TreeDetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  memory.content,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey.shade800,
-                    height: 1.3,
+                if (memory.isHide && !isMyMemory)
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade200,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.visibility_off,
+                          size: 16,
+                          color: Colors.grey.shade600,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'This memory is private',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey.shade600,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  Text(
+                    memory.content,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey.shade800,
+                      height: 1.3,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
+
                 const SizedBox(height: 4),
                 Row(
                   children: [
