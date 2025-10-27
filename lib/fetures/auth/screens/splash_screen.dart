@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lottie/lottie.dart';
 import 'package:memora/fetures/auth/provider/auth_provider.dart';
-import 'login_screen.dart';
+import 'package:memora/fetures/onboarding/screen/onboarding_screen.dart';
 import 'pairing_screen.dart';
 import 'home_screen.dart';
 import 'dart:math' as math;
@@ -107,7 +107,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     Widget nextScreen;
 
     if (user == null) {
-      nextScreen = const LoginScreen();
+      nextScreen = const OnboardingScreen();
     } else {
       final hasCouple = await authService.hasVillage();
       nextScreen = hasCouple ? const HomeScreen() : const PairingScreen();
