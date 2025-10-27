@@ -178,7 +178,7 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                           );
 
                           // If memory was updated, go back to refresh the list
-                          if (result == true && mounted) {
+                          if (result == true && context.mounted) {
                             Navigator.pop(context);
                           }
                         },
