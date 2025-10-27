@@ -93,12 +93,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     SliverToBoxAdapter(
                       child: Column(
                         children: [
+                          // const SizedBox(height: 50),
+                          // _buildProfileCard(user, village),
                           StreakWidget(
                             village: village,
                             currentUserId: user!.uid,
                           ),
-                          const SizedBox(height: 50),
-                          _buildProfileCard(user, village),
 
                           _buildStatsGrid(village),
                           _buildActivityCard(village),
@@ -176,181 +176,181 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  Widget _buildProfileCard(dynamic user, Village village) {
-    final isPartner1 = user?.uid == village.partner1Id;
-    final userName = user?.displayName ?? 'User';
-    final userEmail = user?.email ?? '';
+  // Widget _buildProfileCard(dynamic user, Village village) {
+  //   final isPartner1 = user?.uid == village.partner1Id;
+  //   final userName = user?.displayName ?? 'User';
+  //   final userEmail = user?.email ?? '';
 
-    return Transform.translate(
-      offset: const Offset(0, -40),
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 20),
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 15,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            // Avatar
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFF9B85C0),
-                    Color(0xFFE8B4D9),
-                  ],
-                ),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF9B85C0).withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    spreadRadius: 1,
-                  ),
-                ],
-              ),
-              child: Center(
-                child: Text(
-                  userName.substring(0, 1).toUpperCase(),
-                  style: const TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 16),
+  //   return Transform.translate(
+  //     offset: const Offset(0, -40),
+  //     child: Container(
+  //       margin: const EdgeInsets.symmetric(horizontal: 20),
+  //       padding: const EdgeInsets.all(20),
+  //       decoration: BoxDecoration(
+  //         color: Colors.white,
+  //         borderRadius: BorderRadius.circular(20),
+  //         boxShadow: [
+  //           BoxShadow(
+  //             color: Colors.black.withValues(alpha: 0.06),
+  //             blurRadius: 15,
+  //             offset: const Offset(0, 5),
+  //           ),
+  //         ],
+  //       ),
+  //       child: Row(
+  //         children: [
+  //           // Avatar
+  //           Container(
+  //             width: 60,
+  //             height: 60,
+  //             decoration: BoxDecoration(
+  //               gradient: const LinearGradient(
+  //                 begin: Alignment.topLeft,
+  //                 end: Alignment.bottomRight,
+  //                 colors: [
+  //                   Color(0xFF9B85C0),
+  //                   Color(0xFFE8B4D9),
+  //                 ],
+  //               ),
+  //               shape: BoxShape.circle,
+  //               boxShadow: [
+  //                 BoxShadow(
+  //                   color: const Color(0xFF9B85C0).withValues(alpha: 0.3),
+  //                   blurRadius: 8,
+  //                   spreadRadius: 1,
+  //                 ),
+  //               ],
+  //             ),
+  //             child: Center(
+  //               child: Text(
+  //                 userName.substring(0, 1).toUpperCase(),
+  //                 style: const TextStyle(
+  //                   fontSize: 26,
+  //                   fontWeight: FontWeight.bold,
+  //                   color: Colors.white,
+  //                 ),
+  //               ),
+  //             ),
+  //           ),
+  //           const SizedBox(width: 16),
 
-            // User Info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    userName,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey.shade800,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    userEmail,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey.shade600,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      // Role Badge
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF9B85C0).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: const Color(
-                              0xFF9B85C0,
-                            ).withValues(alpha: 0.3),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.favorite,
-                              color: Color(0xFF9B85C0),
-                              size: 12,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              isPartner1 ? 'Partner 1' : 'Partner 2',
-                              style: const TextStyle(
-                                color: Color(0xFF9B85C0),
-                                fontWeight: FontWeight.w600,
-                                fontSize: 11,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      // Village Badge
-                      Flexible(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(
-                              0xFF6B9B78,
-                            ).withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: const Color(
-                                0xFF6B9B78,
-                              ).withValues(alpha: 0.3),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.home,
-                                color: Color(0xFF6B9B78),
-                                size: 12,
-                              ),
-                              const SizedBox(width: 4),
-                              Flexible(
-                                child: Text(
-                                  village.name,
-                                  style: const TextStyle(
-                                    color: Color(0xFF6B9B78),
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 11,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  //           // User Info
+  //           Expanded(
+  //             child: Column(
+  //               crossAxisAlignment: CrossAxisAlignment.start,
+  //               children: [
+  //                 Text(
+  //                   userName,
+  //                   style: TextStyle(
+  //                     fontSize: 18,
+  //                     fontWeight: FontWeight.bold,
+  //                     color: Colors.grey.shade800,
+  //                   ),
+  //                   maxLines: 1,
+  //                   overflow: TextOverflow.ellipsis,
+  //                 ),
+  //                 const SizedBox(height: 2),
+  //                 Text(
+  //                   userEmail,
+  //                   style: TextStyle(
+  //                     fontSize: 13,
+  //                     color: Colors.grey.shade600,
+  //                   ),
+  //                   maxLines: 1,
+  //                   overflow: TextOverflow.ellipsis,
+  //                 ),
+  //                 const SizedBox(height: 8),
+  //                 Row(
+  //                   children: [
+  //                     // Role Badge
+  //                     Container(
+  //                       padding: const EdgeInsets.symmetric(
+  //                         horizontal: 10,
+  //                         vertical: 4,
+  //                       ),
+  //                       decoration: BoxDecoration(
+  //                         color: const Color(0xFF9B85C0).withValues(alpha: 0.1),
+  //                         borderRadius: BorderRadius.circular(8),
+  //                         border: Border.all(
+  //                           color: const Color(
+  //                             0xFF9B85C0,
+  //                           ).withValues(alpha: 0.3),
+  //                         ),
+  //                       ),
+  //                       child: Row(
+  //                         mainAxisSize: MainAxisSize.min,
+  //                         children: [
+  //                           const Icon(
+  //                             Icons.favorite,
+  //                             color: Color(0xFF9B85C0),
+  //                             size: 12,
+  //                           ),
+  //                           const SizedBox(width: 4),
+  //                           Text(
+  //                             isPartner1 ? 'Partner 1' : 'Partner 2',
+  //                             style: const TextStyle(
+  //                               color: Color(0xFF9B85C0),
+  //                               fontWeight: FontWeight.w600,
+  //                               fontSize: 11,
+  //                             ),
+  //                           ),
+  //                         ],
+  //                       ),
+  //                     ),
+  //                     const SizedBox(width: 6),
+  //                     // Village Badge
+  //                     Flexible(
+  //                       child: Container(
+  //                         padding: const EdgeInsets.symmetric(
+  //                           horizontal: 10,
+  //                           vertical: 4,
+  //                         ),
+  //                         decoration: BoxDecoration(
+  //                           color: const Color(
+  //                             0xFF6B9B78,
+  //                           ).withValues(alpha: 0.1),
+  //                           borderRadius: BorderRadius.circular(8),
+  //                           border: Border.all(
+  //                             color: const Color(
+  //                               0xFF6B9B78,
+  //                             ).withValues(alpha: 0.3),
+  //                           ),
+  //                         ),
+  //                         child: Row(
+  //                           mainAxisSize: MainAxisSize.min,
+  //                           children: [
+  //                             const Icon(
+  //                               Icons.home,
+  //                               color: Color(0xFF6B9B78),
+  //                               size: 12,
+  //                             ),
+  //                             const SizedBox(width: 4),
+  //                             Flexible(
+  //                               child: Text(
+  //                                 village.name,
+  //                                 style: const TextStyle(
+  //                                   color: Color(0xFF6B9B78),
+  //                                   fontWeight: FontWeight.w600,
+  //                                   fontSize: 11,
+  //                                 ),
+  //                                 maxLines: 1,
+  //                                 overflow: TextOverflow.ellipsis,
+  //                               ),
+  //                             ),
+  //                           ],
+  //                         ),
+  //                       ),
+  //                     ),
+  //                   ],
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Widget _buildStatsGrid(Village village) {
     return Container(
