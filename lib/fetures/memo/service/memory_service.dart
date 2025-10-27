@@ -60,48 +60,16 @@ class MemoryService {
   }
 
   /// Check if user can add memory today (one per user per day rule)
-  // Future<bool> canAddMemoryToday(String villageId, String userId) async {
-  //   try {
-  //     final monthKey = _getCurrentMonthKey();
-  //     final now = DateTime.now();
-  //     final todayStart = DateTime(now.year, now.month, now.day);
-  //     debugPrint(todayStart.toString());
-  //     final todayEnd = todayStart.add(const Duration(days: 1));
-  //     debugPrint(todayEnd.toString());
-
-  //     final todayMemories = await _firestore
-  //         .collection('villages')
-  //         .doc(villageId)
-  //         .collection('trees')
-  //         .doc(monthKey)
-  //         .collection('memories')
-  //         .where('addedBy', isEqualTo: userId)
-  //         .where(
-  //           'createdAt',
-  //           isGreaterThanOrEqualTo: Timestamp.fromDate(todayStart),
-  //         )
-  //         .where('createdAt', isLessThan: Timestamp.fromDate(todayEnd))
-  //         .get();
-
-  //     return todayMemories.docs.isEmpty;
-  //   } catch (e) {
-  //     return false;
-  //   }
-  // }
-
-  //TODO:comment this and uncomment above one for production
   Future<bool> canAddMemoryToday(String villageId, String userId) async {
     try {
       final monthKey = _getCurrentMonthKey();
       final now = DateTime.now();
+      final todayStart = DateTime(now.year, now.month, now.day);
+      debugPrint(todayStart.toString());
+      final todayEnd = todayStart.add(const Duration(days: 1));
+      debugPrint(todayEnd.toString());
 
-      // 🧪 FOR TESTING: 1-minute cooldown instead of daily
-      final cooldownStart = now.subtract(const Duration(seconds: 1));
-
-      debugPrint('Checking memories added after: $cooldownStart');
-      debugPrint('Current time: $now');
-
-      final recentMemories = await _firestore
+      final todayMemories = await _firestore
           .collection('villages')
           .doc(villageId)
           .collection('trees')
@@ -110,21 +78,53 @@ class MemoryService {
           .where('addedBy', isEqualTo: userId)
           .where(
             'createdAt',
-            isGreaterThanOrEqualTo: Timestamp.fromDate(cooldownStart),
+            isGreaterThanOrEqualTo: Timestamp.fromDate(todayStart),
           )
+          .where('createdAt', isLessThan: Timestamp.fromDate(todayEnd))
           .get();
 
-      final canAdd = recentMemories.docs.isEmpty;
-      debugPrint(
-        'Can add memory: $canAdd (found ${recentMemories.docs.length} recent memories)',
-      );
-
-      return canAdd;
+      return todayMemories.docs.isEmpty;
     } catch (e) {
-      debugPrint('Error checking memory cooldown: $e');
       return false;
     }
   }
+
+  // //TODO:comment this and uncomment above one for production
+  // Future<bool> canAddMemoryToday(String villageId, String userId) async {
+  //   try {
+  //     final monthKey = _getCurrentMonthKey();
+  //     final now = DateTime.now();
+
+  //     // 🧪 FOR TESTING: 1-minute cooldown instead of daily
+  //     final cooldownStart = now.subtract(const Duration(seconds: 1));
+
+  //     debugPrint('Checking memories added after: $cooldownStart');
+  //     debugPrint('Current time: $now');
+
+  //     final recentMemories = await _firestore
+  //         .collection('villages')
+  //         .doc(villageId)
+  //         .collection('trees')
+  //         .doc(monthKey)
+  //         .collection('memories')
+  //         .where('addedBy', isEqualTo: userId)
+  //         .where(
+  //           'createdAt',
+  //           isGreaterThanOrEqualTo: Timestamp.fromDate(cooldownStart),
+  //         )
+  //         .get();
+
+  //     final canAdd = recentMemories.docs.isEmpty;
+  //     debugPrint(
+  //       'Can add memory: $canAdd (found ${recentMemories.docs.length} recent memories)',
+  //     );
+
+  //     return canAdd;
+  //   } catch (e) {
+  //     debugPrint('Error checking memory cooldown: $e');
+  //     return false;
+  //   }
+  // }
 
   /// Add a new memory (ONE PER USER PER DAY)
   Future<MemoryResult> addMemory({
