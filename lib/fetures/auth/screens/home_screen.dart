@@ -10,6 +10,7 @@ import 'package:memora/fetures/love_tree/widgets/tree_widget.dart';
 import 'package:memora/fetures/memo/model/memory_model.dart';
 import 'package:memora/fetures/memo/screens/view_all_memo_screen.dart';
 import 'package:memora/fetures/memo/service/memory_service.dart';
+import 'package:memora/fetures/profile/screens/profile_screen.dart';
 import 'package:memora/fetures/village/model/village_model.dart';
 import 'package:memora/fetures/village/screens/village_history_screen.dart';
 import 'package:memora/fetures/village/service/village_service.dart';
@@ -1232,7 +1233,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         subtitle: 'Edit your profile',
                         onTap: () {
                           Navigator.pop(context);
-                          // TODO: Navigate to profile
+                          Navigator.push(
+                            context,
+                            appFadeScaleRoute(ProfileScreen()),
+                          );
                         },
                       ),
                     ],

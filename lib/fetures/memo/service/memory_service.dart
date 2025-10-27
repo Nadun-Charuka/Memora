@@ -8,7 +8,10 @@ import 'package:flutter/material.dart';
 import 'package:memora/fetures/love_tree/model/tree_model.dart';
 import 'package:memora/fetures/love_tree/services/tree_service.dart';
 import 'package:memora/fetures/memo/model/memory_model.dart';
+import 'package:memora/fetures/village/service/streak_service.dart';
 import 'package:memora/fetures/village/service/village_service.dart';
+
+final StreakService _streakService = StreakService();
 
 /// Service responsible for memory CRUD operations
 /// Handles adding, deleting, and retrieving memories
@@ -218,22 +221,36 @@ class MemoryService {
         lovePointsIncrement: lovePoints,
       );
 
-      // Check if tree just got completed
+      // ✨ NEW: Update streak after adding memory
+      final streakResult = await _streakService.updateStreakAfterMemory(
+        villageId: villageId,
+        userId: userId,
+      );
+
+      // Build success message
       final newMemoryCount = memoryCount + 1;
       String message =
           '${emotion.icon} Memory added! Tree grew ${growthAmount.toStringAsFixed(1)} units!';
+
+      // Add streak info to message
+      if (streakResult.success && streakResult.message.isNotEmpty) {
+        message += '\n${streakResult.message}';
+      }
+
       bool isCompleted = false;
 
       if (newMemoryCount >= treeData['maxMemories']) {
         message =
-            '🎉 Congratulations! Tree completed with 60 memories!\n'
+            '🎉 Congratulations! Tree completed with ${treeData['maxMemories']} memories!\n'
             'Your tree is now part of your village history. 💚';
         isCompleted = true;
       } else if (newMemoryCount >= 55) {
-        // Give a heads up when close to completion
-        final remaining = -newMemoryCount;
+        final remaining = treeData['maxMemories'] - newMemoryCount;
         message =
             '${emotion.icon} Memory added! Only $remaining more to complete this tree!';
+        if (streakResult.success && streakResult.message.isNotEmpty) {
+          message += '\n${streakResult.message}';
+        }
       }
 
       return MemoryResult(
@@ -244,6 +261,12 @@ class MemoryService {
           newMemoryCount,
           true,
           treeData['maxMemories'],
+        ),
+        // ✨ NEW: Include streak info in result
+        streakInfo: StreakResultInfo(
+          currentStreak: streakResult.currentStreak,
+          maxStreak: streakResult.maxStreak,
+          streakIncreased: streakResult.streakIncreased,
         ),
       );
     } catch (e) {
@@ -686,12 +709,27 @@ class MemoryResult {
   final String message;
   final bool treeCompleted;
   final TreeStage? newStage;
+  final StreakResultInfo? streakInfo; // ✨ NEW
 
   MemoryResult({
     required this.success,
     required this.message,
     this.treeCompleted = false,
     this.newStage,
+    this.streakInfo, // ✨ NEW
+  });
+}
+
+/// ✨ NEW: Streak information in memory result
+class StreakResultInfo {
+  final int currentStreak;
+  final int maxStreak;
+  final bool streakIncreased;
+
+  StreakResultInfo({
+    required this.currentStreak,
+    required this.maxStreak,
+    required this.streakIncreased,
   });
 }
 
