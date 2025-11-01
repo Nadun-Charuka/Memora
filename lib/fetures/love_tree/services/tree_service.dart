@@ -5,6 +5,179 @@ import 'package:memora/fetures/love_tree/model/tree_model.dart';
 class TreeService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  /// ✨ NEW: Check and ensure current month tree exists
+  /// Call this on app launch or when navigating to home screen
+  Future<MonthTransitionResult> ensureCurrentMonthTree(
+    String villageId,
+    String userId,
+  ) async {
+    try {
+      final monthKey = _getCurrentMonthKey();
+      final lastMonthKey = _getLastMonthKey();
+
+      // Check if current month tree exists
+      final currentTreeDoc = await _firestore
+          .collection('villages')
+          .doc(villageId)
+          .collection('trees')
+          .doc(monthKey)
+          .get();
+
+      // Check if last month tree exists and is completed
+      final lastTreeDoc = await _firestore
+          .collection('villages')
+          .doc(villageId)
+          .collection('trees')
+          .doc(lastMonthKey)
+          .get();
+
+      final hasLastMonthTree = lastTreeDoc.exists;
+      final lastTreeData = lastTreeDoc.data();
+      final wasLastTreeCompleted = lastTreeData?['isPlanted'] == true;
+
+      // ✅ CASE 1: Current month tree exists - just return it
+      if (currentTreeDoc.exists) {
+        final tree = LoveTree.fromFirestore(
+          currentTreeDoc.data()!,
+          currentTreeDoc.id,
+        );
+
+        return MonthTransitionResult(
+          success: true,
+          currentTree: tree,
+          transitionType: MonthTransitionType.existing,
+          showCelebration: false,
+        );
+      }
+
+      // ✅ CASE 2: New month detected - create tree & check for celebration
+      debugPrint('🌱 New month detected! Creating tree for $monthKey');
+
+      await createMonthlyTree(villageId);
+
+      // Get the newly created tree
+      final newTreeDoc = await _firestore
+          .collection('villages')
+          .doc(villageId)
+          .collection('trees')
+          .doc(monthKey)
+          .get();
+
+      final newTree = LoveTree.fromFirestore(
+        newTreeDoc.data()!,
+        newTreeDoc.id,
+      );
+
+      // Determine if we should show celebration & auto-plant
+      final shouldAutoPlant = hasLastMonthTree && wasLastTreeCompleted;
+
+      if (shouldAutoPlant) {
+        // Get village to check if both partners are active
+        final villageDoc = await _firestore
+            .collection('villages')
+            .doc(villageId)
+            .get();
+
+        final villageData = villageDoc.data()!;
+        final partner1Id = villageData['partner1Id'];
+        final partner2Id = villageData['partner2Id'];
+
+        // Auto-plant by both partners (they were active last month)
+        await _firestore
+            .collection('villages')
+            .doc(villageId)
+            .collection('trees')
+            .doc(monthKey)
+            .update({
+              'plantedBy': [partner1Id, partner2Id],
+              'isPlanted': true,
+              'stage': TreeStage.seedling.name,
+              'lastInteraction': FieldValue.serverTimestamp(),
+            });
+
+        // Update the tree object
+        final updatedTreeDoc = await _firestore
+            .collection('villages')
+            .doc(villageId)
+            .collection('trees')
+            .doc(monthKey)
+            .get();
+
+        final autoPlantedTree = LoveTree.fromFirestore(
+          updatedTreeDoc.data()!,
+          updatedTreeDoc.id,
+        );
+
+        return MonthTransitionResult(
+          success: true,
+          currentTree: autoPlantedTree,
+          lastMonthTree: hasLastMonthTree
+              ? LoveTree.fromFirestore(lastTreeData!, lastTreeDoc.id)
+              : null,
+          transitionType: MonthTransitionType.autoPlanted,
+          showCelebration: true,
+          celebrationMessage: _getCelebrationMessage(lastTreeData),
+        );
+      }
+
+      // New month but requires manual planting (first month or inactive last month)
+      return MonthTransitionResult(
+        success: true,
+        currentTree: newTree,
+        lastMonthTree: hasLastMonthTree
+            ? LoveTree.fromFirestore(lastTreeData!, lastTreeDoc.id)
+            : null,
+        transitionType: MonthTransitionType.needsPlanting,
+        showCelebration: hasLastMonthTree,
+        celebrationMessage: hasLastMonthTree
+            ? 'Last month\'s tree is complete! Plant your new tree together 🌱'
+            : null,
+      );
+    } catch (e) {
+      debugPrint('❌ Error ensuring current month tree: $e');
+      return MonthTransitionResult(
+        success: false,
+        transitionType: MonthTransitionType.error,
+        errorMessage: e.toString(),
+      );
+    }
+  }
+
+  /// Generate celebration message based on last month's tree
+  String _getCelebrationMessage(Map<String, dynamic>? lastTreeData) {
+    if (lastTreeData == null) return 'Welcome to a new month! 🌱';
+
+    final memoryCount = lastTreeData['memoryCount'] ?? 0;
+    final treeName = lastTreeData['name'] ?? 'your tree';
+
+    if (memoryCount >= 55) {
+      return '🎉 Amazing! You completed $treeName with $memoryCount memories!\n'
+          'Your new tree is ready and already planted! 💚';
+    } else if (memoryCount >= 40) {
+      return '✨ Great job! $treeName grew strong with $memoryCount memories!\n'
+          'Let\'s make this month even better! 🌱';
+    } else if (memoryCount >= 20) {
+      return '💫 You added $memoryCount memories last month!\n'
+          'Your new tree is planted and waiting for you! 🌿';
+    } else {
+      return '🌱 A new month brings new opportunities!\n'
+          'Your tree is planted - let\'s grow together! 💚';
+    }
+  }
+
+  /// Get current month key in format: YYYY_MM
+  String _getCurrentMonthKey() {
+    final now = DateTime.now();
+    return '${now.year}_${now.month.toString().padLeft(2, '0')}';
+  }
+
+  /// Get last month key
+  String _getLastMonthKey() {
+    final now = DateTime.now();
+    final lastMonth = DateTime(now.year, now.month - 1);
+    return '${lastMonth.year}_${lastMonth.month.toString().padLeft(2, '0')}';
+  }
+
   /// Get current active tree (or most recent if completed)
   Stream<LoveTree?> getCurrentTreeStream(String villageId) {
     final monthKey = _getCurrentMonthKey();
@@ -65,7 +238,6 @@ class TreeService {
           .collection('trees')
           .doc(monthKey);
 
-      // Check if tree already exists
       final existing = await treeRef.get();
       if (existing.exists) {
         debugPrint('⚠️ Tree already exists for $monthKey');
@@ -88,13 +260,11 @@ class TreeService {
         memoryCount: 0,
         isPlanted: false,
         plantedBy: [],
-        createdAt: now, // Will be overwritten by FieldValue.serverTimestamp()
+        createdAt: now,
         lastInteraction: now,
       );
 
-      // ✅ Use toFirestore() for NEW trees (includes createdAt)
       await treeRef.set(tree.toFirestore());
-
       debugPrint('✅ Created new tree: ${tree.name} for $monthKey');
 
       return TreeResult(
@@ -123,7 +293,6 @@ class TreeService {
       final treeDoc = await treeRef.get();
 
       if (!treeDoc.exists) {
-        // Auto-create tree if it doesn't exist
         await createMonthlyTree(villageId);
         return plantTree(villageId, userId);
       }
@@ -186,7 +355,7 @@ class TreeService {
       final data = treeDoc.data()!;
       final maxMemories = data['maxMemories'];
       final newMemoryCount = ((data['memoryCount'] ?? 0) + memoryCountChange)
-          .clamp(0, maxMemories); // UPDATED
+          .clamp(0, maxMemories);
       final newHeight = ((data['height'] ?? 10.0) + heightChange).clamp(
         10.0,
         200.0,
@@ -198,7 +367,7 @@ class TreeService {
       final newStage = LoveTree.calculateStage(
         newMemoryCount,
         data['isPlanted'] ?? false,
-        maxMemories, // NEW: Pass maxMemories
+        maxMemories,
       );
 
       final updates = <String, dynamic>{
@@ -211,7 +380,6 @@ class TreeService {
         'lastInteraction': FieldValue.serverTimestamp(),
       };
 
-      // UPDATED: Mark as completed when maxMemories reached
       if (newMemoryCount >= maxMemories && data['completedAt'] == null) {
         updates['completedAt'] = FieldValue.serverTimestamp();
       }
@@ -220,12 +388,6 @@ class TreeService {
     } catch (e) {
       debugPrint('Error updating tree stats: $e');
     }
-  }
-
-  // Helper methods
-  String _getCurrentMonthKey() {
-    final now = DateTime.now();
-    return '${now.year}_${now.month.toString().padLeft(2, '0')}';
   }
 
   String _getMonthTreeName(int month) {
@@ -275,4 +437,33 @@ class TreeResult {
     required this.message,
     this.newStage,
   });
+}
+
+/// ✨ NEW: Result for month transition logic
+class MonthTransitionResult {
+  final bool success;
+  final LoveTree? currentTree;
+  final LoveTree? lastMonthTree;
+  final MonthTransitionType transitionType;
+  final bool showCelebration;
+  final String? celebrationMessage;
+  final String? errorMessage;
+
+  MonthTransitionResult({
+    required this.success,
+    this.currentTree,
+    this.lastMonthTree,
+    required this.transitionType,
+    this.showCelebration = false,
+    this.celebrationMessage,
+    this.errorMessage,
+  });
+}
+
+/// ✨ NEW: Types of month transitions
+enum MonthTransitionType {
+  existing, // Current month tree already exists
+  autoPlanted, // New month, auto-planted (both were active last month)
+  needsPlanting, // New month, requires manual planting
+  error, // Something went wrong
 }

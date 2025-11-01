@@ -37,6 +37,225 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
     _loadVillageId();
+    _initializeApp();
+  }
+
+  /// ✨ NEW: Initialize app with month transition check
+  Future<void> _initializeApp() async {
+    final user = ref.read(authServiceProvider).currentUser;
+    if (user == null) return;
+
+    // Step 1: Get village ID
+    final villageId = await _villageService.getUserVillageId(user.uid);
+
+    if (villageId == null) {
+      setState(() {
+        _villageId = null;
+        _isLoadingVillage = false;
+      });
+      return;
+    }
+
+    // Step 2: Check for month transition
+    final transitionResult = await _treeService.ensureCurrentMonthTree(
+      villageId,
+      user.uid,
+    );
+
+    if (mounted) {
+      setState(() {
+        _villageId = villageId;
+        _isLoadingVillage = false;
+      });
+
+      // Step 3: Show celebration if needed
+      if (transitionResult.showCelebration) {
+        _showMonthTransitionCelebration(transitionResult);
+      }
+    }
+  }
+
+  /// ✨ NEW: Beautiful month transition celebration
+  void _showMonthTransitionCelebration(MonthTransitionResult result) {
+    // Wait a moment for the UI to load
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (!mounted) return;
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  const Color(0xFF9B85C0).withValues(alpha: 0.1),
+                  const Color(0xFFE8B4D9).withValues(alpha: 0.1),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Animated Icon
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [
+                        Color(0xFF9B85C0),
+                        Color(0xFFE8B4D9),
+                      ],
+                    ),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Center(
+                    child: Text(
+                      '🌱',
+                      style: TextStyle(fontSize: 40),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Title
+                Text(
+                  result.transitionType == MonthTransitionType.autoPlanted
+                      ? 'New Month, New Tree!'
+                      : 'Last Month Complete!',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey.shade800,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+
+                // Message
+                if (result.celebrationMessage != null)
+                  Text(
+                    result.celebrationMessage!,
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: Colors.grey.shade600,
+                      height: 1.5,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                const SizedBox(height: 24),
+
+                // Stats Card (if last month exists)
+                if (result.lastMonthTree != null)
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: Colors.grey.shade200,
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          result.lastMonthTree!.name,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            _buildStatItem(
+                              '📝',
+                              '${result.lastMonthTree!.memoryCount}',
+                              'Memories',
+                            ),
+                            _buildStatItem(
+                              '💚',
+                              '${result.lastMonthTree!.lovePoints}',
+                              'Love Points',
+                            ),
+                            _buildStatItem(
+                              '🌳',
+                              'Level ${result.lastMonthTree!.level}',
+                              'Growth',
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                const SizedBox(height: 24),
+
+                // Action Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: FilledButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF6B9B78),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      result.transitionType == MonthTransitionType.autoPlanted
+                          ? 'Start Adding Memories!'
+                          : 'Plant Your New Tree!',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    });
+  }
+
+  Widget _buildStatItem(String emoji, String value, String label) {
+    return Column(
+      children: [
+        Text(
+          emoji,
+          style: const TextStyle(fontSize: 20),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.grey.shade800,
+          ),
+        ),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            color: Colors.grey.shade600,
+          ),
+        ),
+      ],
+    );
   }
 
   Future<void> _loadVillageId() async {
