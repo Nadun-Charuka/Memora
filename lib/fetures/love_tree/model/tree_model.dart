@@ -2,11 +2,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 enum TreeStage {
   notPlanted,
-  seedling,
-  growing,
-  blooming,
-  mature,
-  completed; // NEW: When 60 memories reached
+  seedling, // 0-5 memories
+  sprouting, // 5-10 memories
+  growing, // 10-18 memories
+  flourishing, // 18-28 memories
+  blooming, // 28-38 memories
+  radiant, // 38-48 memories
+  mature, // 48-58 memories
+  completed; // 58+ memories
 
   String get displayName {
     switch (this) {
@@ -14,20 +17,49 @@ enum TreeStage {
         return 'Not Planted';
       case TreeStage.seedling:
         return 'Seedling';
+      case TreeStage.sprouting:
+        return 'Sprouting';
       case TreeStage.growing:
         return 'Growing';
+      case TreeStage.flourishing:
+        return 'Flourishing';
       case TreeStage.blooming:
         return 'Blooming';
+      case TreeStage.radiant:
+        return 'Radiant Bloom';
       case TreeStage.mature:
         return 'Mature Tree';
       case TreeStage.completed:
         return 'Completed';
     }
   }
+
+  String get emoji {
+    switch (this) {
+      case TreeStage.notPlanted:
+        return '🌱';
+      case TreeStage.seedling:
+        return '🌱';
+      case TreeStage.sprouting:
+        return '🌿';
+      case TreeStage.growing:
+        return '🌿';
+      case TreeStage.flourishing:
+        return '🍃';
+      case TreeStage.blooming:
+        return '🌸';
+      case TreeStage.radiant:
+        return '✨';
+      case TreeStage.mature:
+        return '🌳';
+      case TreeStage.completed:
+        return '🎉';
+    }
+  }
 }
 
 class LoveTree {
-  final String id; // Format: "YYYY_MM"
+  final String id;
   final String villageId;
   final String name;
   final String type;
@@ -42,7 +74,7 @@ class LoveTree {
   final DateTime createdAt;
   final DateTime lastInteraction;
   final DateTime? completedAt;
-  final int maxMemories; // NEW: Make it dynamic per tree
+  final int maxMemories;
 
   LoveTree({
     required this.id,
@@ -60,23 +92,21 @@ class LoveTree {
     required this.createdAt,
     required this.lastInteraction,
     this.completedAt,
-    int? maxMemories, // NEW: Optional parameter
+    int? maxMemories,
   }) : maxMemories = maxMemories ?? _calculateMaxMemories(id);
 
-  // NEW: Calculate max memories based on month
   static int _calculateMaxMemories(String monthKey) {
     try {
       final parts = monthKey.split('_');
-      if (parts.length != 2) return 62;
+      if (parts.length != 2) return 60;
 
       final year = int.parse(parts[0]);
       final month = int.parse(parts[1]);
 
-      // Get days in month
       final daysInMonth = DateTime(year, month + 1, 0).day;
-      return daysInMonth * 2; // 2 memories per day
+      return daysInMonth * 2;
     } catch (e) {
-      return 62; // Fallback to max
+      return 60;
     }
   }
 
@@ -102,11 +132,9 @@ class LoveTree {
       lastInteraction:
           (data['lastInteraction'] as Timestamp?)?.toDate() ?? DateTime.now(),
       completedAt: (data['completedAt'] as Timestamp?)?.toDate(),
-      maxMemories: data['maxMemories'], // NEW: Load from Firestore
+      maxMemories: data['maxMemories'],
     );
   }
-
-  // REPLACE your toFirestore() method with this:
 
   Map<String, dynamic> toFirestore() {
     return {
@@ -122,17 +150,12 @@ class LoveTree {
       'isPlanted': isPlanted,
       'plantedBy': plantedBy,
       'maxMemories': maxMemories,
-
-      // ✅ FIX: Add createdAt when creating NEW trees
       'createdAt': FieldValue.serverTimestamp(),
       'lastInteraction': FieldValue.serverTimestamp(),
-
       if (completedAt != null) 'completedAt': Timestamp.fromDate(completedAt!),
     };
   }
 
-  // ⚠️ IMPORTANT: Also add this method for UPDATING existing trees
-  // (so we don't overwrite createdAt on updates)
   Map<String, dynamic> toFirestoreUpdate() {
     return {
       'villageId': villageId,
@@ -148,8 +171,6 @@ class LoveTree {
       'plantedBy': plantedBy,
       'maxMemories': maxMemories,
       'lastInteraction': FieldValue.serverTimestamp(),
-
-      // ❌ DON'T include createdAt in updates
       if (completedAt != null) 'completedAt': Timestamp.fromDate(completedAt!),
     };
   }
@@ -161,7 +182,7 @@ class LoveTree {
     );
   }
 
-  // Keep static method for backward compatibility
+  /// Calculate stage based on memory count with new stages
   static TreeStage calculateStage(
     int memoryCount,
     bool isPlanted,
@@ -169,9 +190,12 @@ class LoveTree {
   ) {
     if (!isPlanted) return TreeStage.notPlanted;
     if (memoryCount >= maxMemories) return TreeStage.completed;
-    if (memoryCount <= 10) return TreeStage.seedling;
-    if (memoryCount <= 25) return TreeStage.growing;
-    if (memoryCount <= 40) return TreeStage.blooming;
+    if (memoryCount <= 5) return TreeStage.seedling;
+    if (memoryCount <= 10) return TreeStage.sprouting;
+    if (memoryCount <= 18) return TreeStage.growing;
+    if (memoryCount <= 28) return TreeStage.flourishing;
+    if (memoryCount <= 38) return TreeStage.blooming;
+    if (memoryCount <= 48) return TreeStage.radiant;
     return TreeStage.mature;
   }
 
@@ -179,5 +203,29 @@ class LoveTree {
     if (!isPlanted) return 0.0;
     if (isCompleted) return 1.0;
     return (memoryCount / maxMemories).clamp(0.0, 1.0);
+  }
+
+  /// Get progress within current stage (for animations)
+  double get stageLocalProgress {
+    if (!isPlanted || isCompleted) return 1.0;
+
+    final ranges = {
+      TreeStage.seedling: (0, 5),
+      TreeStage.sprouting: (5, 10),
+      TreeStage.growing: (10, 18),
+      TreeStage.flourishing: (18, 28),
+      TreeStage.blooming: (28, 38),
+      TreeStage.radiant: (38, 48),
+      TreeStage.mature: (48, 58),
+    };
+
+    final range = ranges[stage];
+    if (range == null) return 1.0;
+
+    final (min, max) = range;
+    final localCount = memoryCount - min;
+    final stageSize = max - min;
+
+    return (localCount / stageSize).clamp(0.0, 1.0);
   }
 }

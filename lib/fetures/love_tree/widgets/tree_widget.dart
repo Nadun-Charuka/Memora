@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:memora/fetures/love_tree/model/tree_model.dart';
-import 'package:memora/fetures/love_tree/widgets/tree_painter.dart';
+import 'package:memora/fetures/love_tree/painters/tree_painter.dart';
 import 'package:memora/fetures/memo/model/memory_model.dart';
 
 class TreeWidget extends StatefulWidget {

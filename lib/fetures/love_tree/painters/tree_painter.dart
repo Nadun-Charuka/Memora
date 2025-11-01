@@ -7,9 +7,9 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:memora/fetures/love_tree/model/tree_model.dart';
 import 'package:memora/fetures/memo/model/memory_model.dart';
-import 'painters/memory_painter.dart';
-import 'painters/sky_painter.dart';
-import 'painters/tree_stage_painters.dart';
+import '../widgets/painters/memory_painter.dart';
+import 'sky_painter.dart';
+import '../widgets/painters/tree_stage_painters.dart';
 
 class TreePainter extends CustomPainter {
   final LoveTree tree;
