@@ -661,10 +661,16 @@ class TreeGridCard extends StatelessWidget {
         return [Colors.grey.shade400, Colors.grey.shade500];
       case TreeStage.seedling:
         return [const Color(0xFFA8E6CF), const Color(0xFF88D4AB)];
+      case TreeStage.sprouting:
+        return [const Color(0xFFB8E6CF), const Color(0xFF88D8AB)];
       case TreeStage.growing:
         return [const Color(0xFF7EC8A3), const Color(0xFF6CB693)];
+      case TreeStage.flourishing:
+        return [const Color(0xFF7EC8B8), const Color(0xFF6CB693)];
       case TreeStage.blooming:
         return [const Color(0xFFFF6B9D), const Color(0xFFC44569)];
+      case TreeStage.radiant:
+        return [const Color(0xFF00AAAA), const Color(0xFFF0AAAA)];
       case TreeStage.mature:
         return [const Color(0xFF6B9B78), const Color(0xFF5A8A67)];
       case TreeStage.completed:

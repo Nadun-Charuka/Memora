@@ -14,16 +14,6 @@ void main() async {
   await MemoraNotificationService.init();
   await MemoraNotificationService.scheduleDailyNotifications();
 
-  // // 🧪 TEST: Send immediate notification
-  // await MemoraNotificationService.sendTestNotification();
-
-  // // 🧪 TEST: Check pending notifications
-  // final pending = await MemoraNotificationService.getPendingNotifications();
-  // debugPrint("📊 Pending notifications: ${pending.length}");
-  // for (var notif in pending) {
-  //   debugPrint("   ID: ${notif.id}, Title: ${notif.title}");
-  // }
-
   runApp(
     const ProviderScope(
       child: MemoraApp(),

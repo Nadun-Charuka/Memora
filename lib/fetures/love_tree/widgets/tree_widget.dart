@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:memora/fetures/love_tree/model/tree_model.dart';
-import 'package:memora/fetures/love_tree/painters/tree_painter.dart';
+import 'package:memora/fetures/love_tree/painters/tree_stage_painter.dart';
 import 'package:memora/fetures/memo/model/memory_model.dart';
 
 class TreeWidget extends StatefulWidget {
@@ -451,11 +451,20 @@ class _TreeWidgetState extends State<TreeWidget> with TickerProviderStateMixin {
       case TreeStage.seedling:
         icon = '🌱';
         break;
+      case TreeStage.sprouting:
+        icon = '🌿';
+        break;
       case TreeStage.growing:
         icon = '🌿';
         break;
+      case TreeStage.flourishing:
+        icon = '🍃';
+        break;
       case TreeStage.blooming:
         icon = '🌸';
+        break;
+      case TreeStage.radiant:
+        icon = '✨';
         break;
       case TreeStage.mature:
         icon = '🌳';

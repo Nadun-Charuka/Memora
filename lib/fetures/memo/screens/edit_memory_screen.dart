@@ -513,7 +513,7 @@ class _EditMemoryScreenState extends ConsumerState<EditMemoryScreen>
             controller: _contentController,
             focusNode: _focusNode,
             maxLines: 4,
-            maxLength: 500,
+            maxLength: 1000,
             enabled: !_isLoading,
             style: const TextStyle(
               fontSize: 15,

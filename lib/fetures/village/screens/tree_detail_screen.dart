@@ -623,7 +623,7 @@ class _TreeDetailScreenState extends ConsumerState<TreeDetailScreen> {
                       label: 'Status',
                       value: widget.tree.isCompleted
                           ? 'Completed 🎉'
-                          : 'Growing 🌱',
+                          : 'Not completed 🌱',
                     ),
                   ],
                   if (widget.tree.completedAt != null) ...[
@@ -1008,10 +1008,16 @@ class _TreeDetailScreenState extends ConsumerState<TreeDetailScreen> {
         return Colors.grey.shade600;
       case TreeStage.seedling:
         return const Color(0xFFA8E6CF);
+      case TreeStage.sprouting:
+        return const Color(0xFFB8E6CF);
       case TreeStage.growing:
         return const Color(0xFF7EC8A3);
+      case TreeStage.flourishing:
+        return const Color(0xFF7EC8B8);
       case TreeStage.blooming:
         return const Color(0xFFFF6B9D);
+      case TreeStage.radiant:
+        return const Color(0xFF00AAAA);
       case TreeStage.mature:
         return const Color(0xFF6B9B78);
       case TreeStage.completed:
